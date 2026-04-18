@@ -17,6 +17,23 @@ export interface Borrow {
   notes: string | null;
 }
 
+export interface Book {
+  id: number;
+  book_id: string;
+  title: string;
+  authors: string[];
+  thumbnail: string | null;
+  description: string | null;
+  publisher: string | null;
+  published_date: string | null;
+  page_count: number | null;
+  categories: string[] | null;
+  isbn: string | null;
+  rating: number | null;
+  added_at: string;
+  borrowed_by?: string | null;
+}
+
 export interface GoogleBook {
   id: string;
   title: string;

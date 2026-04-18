@@ -5,6 +5,32 @@ import { revalidatePath } from 'next/cache';
 import sql from '@/lib/db';
 import { GoogleBook } from '@/lib/types';
 
+export async function addBook(book: GoogleBook) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  await sql`
+    INSERT INTO books (book_id, title, authors, thumbnail, description, publisher, published_date, page_count, categories, isbn, rating)
+    VALUES (
+      ${book.id}, ${book.title}, ${book.authors}, ${book.thumbnail},
+      ${book.description}, ${book.publisher}, ${book.publishedDate},
+      ${book.pageCount}, ${book.categories}, ${book.isbn}, ${book.rating}
+    )
+    ON CONFLICT (book_id) DO NOTHING
+  `;
+
+  revalidatePath('/admin');
+}
+
+export async function removeBook(bookId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  await sql`DELETE FROM books WHERE book_id = ${bookId}`;
+
+  revalidatePath('/admin');
+}
+
 export async function setupDatabase() {
   await sql`
     CREATE TABLE IF NOT EXISTS borrows (

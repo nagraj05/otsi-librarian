@@ -1,21 +1,37 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import { Library, BookOpen, RotateCcw, BookMarked, TrendingUp } from 'lucide-react';
+import { Library, BookOpen, RotateCcw, BookMarked, TrendingUp, BookPlus } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import sql from '@/lib/db';
-import { Borrow } from '@/lib/types';
+import { Borrow, Book } from '@/lib/types';
 import { AddBorrowDialog } from '@/components/add-borrow-dialog';
 import { ReturnButton } from '@/components/return-button';
 import { DeleteButton } from '@/components/delete-button';
+import { AddToLibraryDialog } from '@/components/add-to-library-dialog';
+import { RemoveBookButton } from '@/components/remove-book-button';
 
 async function getBorrows(): Promise<Borrow[]> {
   try {
     const rows = await sql`SELECT * FROM borrows ORDER BY borrowed_at DESC`;
     return rows as Borrow[];
+  } catch {
+    return [];
+  }
+}
+
+async function getCatalogBooks(): Promise<(Book & { borrowed_by: string | null })[]> {
+  try {
+    const rows = await sql`
+      SELECT b.*, br.borrower_name AS borrowed_by
+      FROM books b
+      LEFT JOIN borrows br ON b.book_id = br.book_id AND br.returned_at IS NULL
+      ORDER BY b.title ASC
+    `;
+    return rows as (Book & { borrowed_by: string | null })[];
   } catch {
     return [];
   }
@@ -33,7 +49,7 @@ export default async function AdminPage() {
   const { userId } = await auth();
   if (!userId) redirect('/');
 
-  const [user, borrows] = await Promise.all([currentUser(), getBorrows()]);
+  const [user, borrows, catalog] = await Promise.all([currentUser(), getBorrows(), getCatalogBooks()]);
   const borrowed = borrows.filter((b) => !b.returned_at);
   const returned = borrows.filter((b) => b.returned_at);
 
@@ -133,6 +149,37 @@ export default async function AdminPage() {
             </div>
           </>
         )}
+
+        {/* Library Catalog */}
+        <div className="mt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <BookPlus className="w-5 h-5 text-indigo-500" />
+                Library Catalog
+              </h2>
+              <p className="text-slate-500 text-sm mt-0.5">
+                Books visible in the terminal. {catalog.length} book{catalog.length !== 1 ? 's' : ''} ·{' '}
+                {catalog.filter(b => !b.borrowed_by).length} available
+              </p>
+            </div>
+            <AddToLibraryDialog />
+          </div>
+
+          {catalog.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-3xl ring-1 ring-black/[0.05] shadow-sm">
+              <div className="w-14 h-14 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4 ring-1 ring-black/[0.06]">
+                <BookPlus className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="font-semibold text-slate-600">No books in catalog yet</p>
+              <p className="text-sm text-slate-400 mt-1">Click &ldquo;Add Book&rdquo; to build your library.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {catalog.map(b => <CatalogCard key={b.id} book={b} />)}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
@@ -246,6 +293,47 @@ function MobileRow({ borrow }: { borrow: Borrow }) {
           {!isReturned && <ReturnButton id={borrow.id} bookTitle={borrow.book_title} />}
           <DeleteButton id={borrow.id} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogCard({ book }: { book: Book & { borrowed_by: string | null } }) {
+  const isOut = !!book.borrowed_by;
+  return (
+    <div className="bg-white rounded-2xl ring-1 ring-black/[0.05] shadow-sm p-3.5 flex gap-3 items-start group">
+      {book.thumbnail ? (
+        <Image
+          src={book.thumbnail}
+          alt={book.title}
+          width={36}
+          height={50}
+          className="rounded-lg object-cover shadow-sm shrink-0"
+          style={{ width: 36, height: 50, objectFit: 'cover' }}
+        />
+      ) : (
+        <div className="w-9 h-[50px] rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+          <BookOpen className="w-4 h-4 text-slate-300" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-1">
+          <Link
+            href={`/books/${book.book_id}`}
+            className="font-semibold text-sm text-slate-900 line-clamp-2 leading-snug hover:text-indigo-600 transition-colors"
+          >
+            {book.title}
+          </Link>
+          <RemoveBookButton bookId={book.book_id} title={book.title} />
+        </div>
+        {book.authors && book.authors.length > 0 && (
+          <p className="text-xs text-slate-400 truncate mt-0.5">{book.authors.join(', ')}</p>
+        )}
+        <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          isOut ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+        }`}>
+          {isOut ? `Out · ${book.borrowed_by}` : 'Available'}
+        </span>
       </div>
     </div>
   );

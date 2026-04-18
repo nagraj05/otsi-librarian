@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Terminal } from '@/components/terminal';
 import sql from '@/lib/db';
 import { Borrow } from '@/lib/types';
 
@@ -175,21 +176,24 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {userId ? (
-            <Link href="/admin">
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold shadow-sm shadow-indigo-200">
-                <BookMarked style={{ width: 13, height: 13 }} />
-                Dashboard
-              </Button>
-            </Link>
-          ) : (
-            <SignInButton mode="modal">
-              <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold border-slate-200 text-slate-600 hover:bg-slate-50">
-                <LogIn style={{ width: 13, height: 13 }} />
-                Admin Login
-              </Button>
-            </SignInButton>
-          )}
+          <div className="flex items-center gap-2">
+            <Terminal />
+            {userId ? (
+              <Link href="/admin">
+                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold shadow-sm shadow-indigo-200">
+                  <BookMarked style={{ width: 13, height: 13 }} />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <SignInButton mode="modal">
+                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold border-slate-200 text-slate-600 hover:bg-slate-50">
+                  <LogIn style={{ width: 13, height: 13 }} />
+                  Admin Login
+                </Button>
+              </SignInButton>
+            )}
+          </div>
         </div>
       </header>
 

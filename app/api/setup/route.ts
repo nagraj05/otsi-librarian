@@ -22,5 +22,22 @@ export async function GET() {
       notes TEXT
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS books (
+      id SERIAL PRIMARY KEY,
+      book_id VARCHAR(255) UNIQUE NOT NULL,
+      title VARCHAR(500) NOT NULL,
+      authors TEXT[] DEFAULT '{}',
+      thumbnail TEXT,
+      description TEXT,
+      publisher VARCHAR(255),
+      published_date VARCHAR(100),
+      page_count INTEGER,
+      categories TEXT[] DEFAULT '{}',
+      isbn VARCHAR(100),
+      rating DECIMAL(3,1),
+      added_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
   return NextResponse.json({ ok: true, message: 'Database ready' });
 }
