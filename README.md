@@ -45,6 +45,7 @@ When you add a book, the title is looked up via the Google Books API and all met
 | 📱 **Mobile responsive** | Cards on mobile, table on desktop — both fully polished |
 | ⚡ **Skeleton loading** | Every page has a matching loading skeleton for instant perceived performance |
 | 🎨 **Consistent design** | Plus Jakarta Sans, warm `#F7F6F3` background, shadcn/ui components throughout |
+| 💻 **Built-in terminal** | Browser terminal — browse the catalog, check borrow status, and message the admin via WhatsApp |
 
 ---
 
@@ -108,6 +109,8 @@ bun lint       # ESLint check
 | `/admin` | Auth only | Add borrows, mark returns, delete records |
 | `/books/[bookId]` | Public | Book detail page — metadata, stats, borrow timeline |
 | `/api/books/search` | Internal | Google Books search proxy (`?q=query`) |
+| `/api/catalog` | Internal | Returns all books with borrow status (used by terminal) |
+| `/api/notify` | Internal | Sends a WhatsApp message to the admin (used by terminal `message` command) |
 | `/api/setup` | One-time | Creates the `borrows` table in the database |
 
 ---
@@ -135,6 +138,7 @@ otsi-librarian/
 │   ├── book-search.tsx           ← Debounced autocomplete against Google Books
 │   ├── return-button.tsx         ← Mark-returned server action button
 │   ├── delete-button.tsx         ← Delete record server action button
+│   ├── terminal.tsx              ← In-browser terminal (ls, cat, message admin…)
 │   └── ui/                       ← shadcn/ui primitives (badge, button, dialog…)
 ├── lib/
 │   ├── db.ts                     ← Neon SQL client
