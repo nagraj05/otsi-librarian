@@ -325,7 +325,7 @@ export function Terminal() {
       <button
         onClick={openTerminal}
         title="Open terminal"
-        className="inline-flex items-center gap-1.5 text-[13px] font-mono font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl transition-colors border border-transparent hover:border-indigo-100"
+        className="inline-flex items-center gap-1.5 text-[13px] cursor-pointer font-mono font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl transition-colors border border-transparent hover:border-indigo-100"
       >
         <TerminalIcon style={{ width: 14, height: 14 }} />
         <span className="hidden sm:inline">terminal</span>

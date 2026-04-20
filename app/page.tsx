@@ -188,8 +188,8 @@ export default async function HomePage() {
             ) : (
               <SignInButton mode="modal">
                 <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold border-slate-200 text-slate-600 hover:bg-slate-50">
-                  <LogIn style={{ width: 13, height: 13 }} />
-                  Admin Login
+                  {/* <LogIn style={{ width: 13, height: 13 }} /> */}
+                  Admin
                 </Button>
               </SignInButton>
             )}
@@ -197,7 +197,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main className="max-w-5xl mx-auto p-2 ">
 
         {/* Hero text */}
         <div className="mb-4">
