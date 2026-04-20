@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Terminal as TerminalIcon, X } from 'lucide-react';
 
@@ -68,7 +68,7 @@ function lineColor(type: LineType): string {
 }
 
 export function Terminal() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [isOpen, setIsOpen]   = useState(false);
   const [lines, setLines]     = useState<Line[]>(WELCOME);
   const [input, setInput]     = useState('');
@@ -80,18 +80,18 @@ export function Terminal() {
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  const openTerminal = useCallback(() => {
+    setLines([...WELCOME]);
+    setInput('');
+    setCwd('~');
+    setHistory([]);
+    setHistoryIdx(-1);
+    setBooks([]);
+    setIsOpen(true);
+  }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      setLines([...WELCOME]);
-      setInput('');
-      setCwd('~');
-      setHistory([]);
-      setHistoryIdx(-1);
-      setBooks([]);
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    if (isOpen) setTimeout(() => inputRef.current?.focus(), 300);
   }, [isOpen]);
 
   useEffect(() => {
@@ -323,7 +323,7 @@ export function Terminal() {
     <>
       {/* Trigger */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openTerminal}
         title="Open terminal"
         className="inline-flex items-center gap-1.5 text-[13px] font-mono font-semibold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl transition-colors border border-transparent hover:border-indigo-100"
       >
