@@ -24,7 +24,7 @@ export function DeleteButton({ id }: { id: number }) {
           }
         })
       }
-      className="rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50"
+      className="rounded-lg text-danger hover:text-danger hover:bg-danger-muted"
     >
       <Trash2 className="w-3.5 h-3.5" />
     </Button>

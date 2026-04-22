@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/sonner';
+import { Providers } from '@/components/providers';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -21,10 +22,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider afterSignOutUrl="/">
-      <html lang="en" className={`${plusJakarta.variable} h-full`}>
-        <body className="min-h-full flex flex-col bg-[#F7F6F3] text-slate-900 antialiased">
-          {children}
-          <Toaster richColors position="top-right" />
+      <html lang="en" className={`${plusJakarta.variable} h-full`} suppressHydrationWarning>
+        <body className="min-h-full flex flex-col antialiased">
+          <Providers>
+            {children}
+            <Toaster richColors position="top-right" />
+          </Providers>
         </body>
       </html>
     </ClerkProvider>

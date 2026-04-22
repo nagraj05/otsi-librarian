@@ -40,7 +40,7 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
 
   if (selected) {
     return (
-      <div className="flex gap-3 items-start p-3 rounded-xl border border-indigo-200 bg-indigo-50">
+      <div className="flex gap-3 items-start p-3 rounded-xl border border-brand-muted/60 bg-brand-muted">
         {selected.thumbnail ? (
           <Image
             src={selected.thumbnail}
@@ -50,23 +50,23 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
             className="rounded-md object-cover shrink-0 shadow-sm"
           />
         ) : (
-          <div className="w-12 h-16 rounded-md bg-indigo-200 flex items-center justify-center shrink-0">
-            <BookOpen className="w-5 h-5 text-indigo-500" />
+          <div className="w-12 h-16 rounded-md bg-brand/20 flex items-center justify-center shrink-0">
+            <BookOpen className="w-5 h-5 text-brand" />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-indigo-900 line-clamp-2">{selected.title}</p>
+          <p className="font-semibold text-sm text-foreground line-clamp-2">{selected.title}</p>
           {selected.authors.length > 0 && (
-            <p className="text-xs text-indigo-600 mt-0.5">{selected.authors.join(', ')}</p>
+            <p className="text-xs text-brand mt-0.5">{selected.authors.join(', ')}</p>
           )}
           {selected.publishedDate && (
-            <p className="text-xs text-indigo-400 mt-0.5">{selected.publishedDate}</p>
+            <p className="text-xs text-brand/70 mt-0.5">{selected.publishedDate}</p>
           )}
         </div>
         <button
           type="button"
           onClick={() => onSelect(null as unknown as GoogleBook)}
-          className="text-xs text-indigo-400 hover:text-indigo-600 shrink-0"
+          className="text-xs text-brand hover:text-brand/80 shrink-0"
         >
           Change
         </button>
@@ -97,12 +97,12 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-xl shadow-xl max-h-72 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-72 overflow-y-auto">
           {results.map((book) => (
             <button
               key={book.id}
               type="button"
-              className="w-full flex gap-3 items-center px-3 py-2.5 hover:bg-indigo-50 transition-colors text-left"
+              className="w-full flex gap-3 items-center px-3 py-2.5 hover:bg-brand-muted transition-colors text-left"
               onMouseDown={() => {
                 onSelect(book);
                 setQuery('');
@@ -119,8 +119,8 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
                   className="rounded object-cover shrink-0"
                 />
               ) : (
-                <div className="w-8 h-10 rounded bg-indigo-100 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-4 h-4 text-indigo-400" />
+                <div className="w-8 h-10 rounded bg-brand-muted flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-brand" />
                 </div>
               )}
               <div className="min-w-0">
@@ -135,7 +135,7 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
       )}
 
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-border rounded-xl shadow-xl p-4 text-center text-sm text-muted-foreground">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl p-4 text-center text-sm text-muted-foreground">
           No books found for &ldquo;{query}&rdquo;
         </div>
       )}

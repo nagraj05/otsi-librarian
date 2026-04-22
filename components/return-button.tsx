@@ -24,7 +24,7 @@ export function ReturnButton({ id, bookTitle }: { id: number; bookTitle: string 
           }
         })
       }
-      className="rounded-lg gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300"
+      className="rounded-lg gap-1.5 text-success border-success-muted hover:bg-success-muted hover:border-success/50"
     >
       <CheckCircle className="w-3.5 h-3.5" />
       {isPending ? 'Updating...' : 'Return'}

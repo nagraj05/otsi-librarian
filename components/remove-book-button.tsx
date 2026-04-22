@@ -23,7 +23,7 @@ export function RemoveBookButton({ bookId, title }: { bookId: string; title: str
     <button
       onClick={handleClick}
       disabled={isPending}
-      className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+      className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-danger hover:bg-danger-muted transition-colors disabled:opacity-40"
       title="Remove from library"
     >
       <Trash2 style={{ width: 13, height: 13 }} />

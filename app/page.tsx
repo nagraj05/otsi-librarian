@@ -1,17 +1,32 @@
-import { BookOpen, BookMarked, Library, LogIn, Users } from 'lucide-react';
+import { BookOpen, BookMarked, Library, Users, BookPlus } from 'lucide-react';
 import { SignInButton } from '@clerk/nextjs';
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Terminal } from '@/components/terminal';
+import { ThemeToggle } from '@/components/theme-toggle';
 import sql from '@/lib/db';
-import { Borrow } from '@/lib/types';
+import { Borrow, Book } from '@/lib/types';
 
 async function getBorrows(): Promise<Borrow[]> {
   try {
     const rows = await sql`SELECT * FROM borrows ORDER BY borrowed_at DESC`;
     return rows as Borrow[];
+  } catch {
+    return [];
+  }
+}
+
+async function getCatalogBooks(): Promise<(Book & { borrowed_by: string | null })[]> {
+  try {
+    const rows = await sql`
+      SELECT b.*, br.borrower_name AS borrowed_by
+      FROM books b
+      LEFT JOIN borrows br ON b.book_id = br.book_id AND br.returned_at IS NULL
+      ORDER BY b.title ASC
+    `;
+    return rows as (Book & { borrowed_by: string | null })[];
   } catch {
     return [];
   }
@@ -44,15 +59,15 @@ function getColor(name: string) {
 function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
   const color = getColor(name);
   return (
-    <div className="bg-white rounded-3xl shadow-sm shadow-black/5 ring-1 ring-black/[0.05] overflow-hidden hover:shadow-md hover:shadow-black/8 transition-all duration-300">
+    <div className="bg-card rounded-3xl shadow-sm ring-1 ring-foreground/5 overflow-hidden hover:shadow-md transition-all duration-300">
       {/* Person header */}
       <div className="px-5 pt-5 pb-4 flex items-center gap-3.5">
         <div className={`w-10 h-10 rounded-2xl ${color.bg} flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}>
           {getInitials(name)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 truncate text-[15px]">{name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="font-semibold text-foreground truncate text-[15px]">{name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {borrows.length} book{borrows.length > 1 ? 's' : ''} borrowed
           </p>
         </div>
@@ -62,7 +77,7 @@ function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-slate-100 mx-5" />
+      <div className="h-px bg-border mx-5" />
 
       {/* Books list */}
       <div className="px-5 py-4 space-y-4">
@@ -81,8 +96,8 @@ function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
                     style={{ width: 44, height: 62, objectFit: 'cover' }}
                   />
                 ) : (
-                  <div className="w-11 h-[62px] rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
-                    <BookOpen className="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                  <div className="w-11 h-[62px] rounded-xl bg-muted flex items-center justify-center group-hover:bg-brand-muted transition-colors">
+                    <BookOpen className="w-5 h-5 text-muted-foreground group-hover:text-brand transition-colors" />
                   </div>
                 )}
               </Link>
@@ -91,20 +106,20 @@ function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
               <div className="flex-1 min-w-0 pt-0.5">
                 <Link
                   href={`/books/${b.book_id}`}
-                  className="font-semibold text-sm text-slate-900 leading-snug line-clamp-2 hover:text-indigo-600 transition-colors"
+                  className="font-semibold text-sm text-foreground leading-snug line-clamp-2 hover:text-brand transition-colors"
                 >
                   {b.book_title}
                 </Link>
                 {b.book_authors && b.book_authors.length > 0 && (
-                  <p className="text-xs text-slate-400 mt-0.5 truncate">{b.book_authors.join(', ')}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{b.book_authors.join(', ')}</p>
                 )}
-                <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-warn" />
                   Since {formatDate(b.borrowed_at)}
                 </p>
               </div>
             </div>
-            {i < borrows.length - 1 && <div className="h-px bg-slate-50 mt-4" />}
+            {i < borrows.length - 1 && <div className="h-px bg-border/50 mt-4" />}
           </div>
         ))}
       </div>
@@ -114,7 +129,7 @@ function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
 
 function ReturnedCard({ borrow }: { borrow: Borrow }) {
   return (
-    <div className="bg-white rounded-2xl ring-1 ring-black/[0.05] shadow-sm flex gap-3.5 items-center p-3.5 hover:shadow-md transition-all duration-200 group">
+    <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm flex gap-3.5 items-center p-3.5 hover:shadow-md transition-all duration-200 group">
       <Link href={`/books/${borrow.book_id}`} className="shrink-0">
         {borrow.book_thumbnail ? (
           <Image
@@ -126,33 +141,79 @@ function ReturnedCard({ borrow }: { borrow: Borrow }) {
             style={{ width: 36, height: 50, objectFit: 'cover' }}
           />
         ) : (
-          <div className="w-9 h-[50px] rounded-lg bg-slate-100 flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-slate-300" />
+          <div className="w-9 h-[50px] rounded-lg bg-muted flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-muted-foreground/50" />
           </div>
         )}
       </Link>
       <div className="flex-1 min-w-0">
         <Link
           href={`/books/${borrow.book_id}`}
-          className="font-semibold text-sm text-slate-700 line-clamp-1 hover:text-indigo-600 transition-colors"
+          className="font-semibold text-sm text-foreground/80 line-clamp-1 hover:text-brand transition-colors"
         >
           {borrow.book_title}
         </Link>
-        <p className="text-xs text-slate-400 mt-0.5 truncate">{borrow.borrower_name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">{borrow.borrower_name}</p>
       </div>
       <div className="text-right shrink-0">
-        <span className="inline-block text-[11px] font-medium bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+        <span className="inline-block text-[11px] font-medium bg-success-muted text-success-muted-fg px-2 py-0.5 rounded-full">
           Returned
         </span>
-        <p className="text-[11px] text-slate-400 mt-1">{formatDate(borrow.returned_at!)}</p>
+        <p className="text-[11px] text-muted-foreground mt-1">{formatDate(borrow.returned_at!)}</p>
       </div>
     </div>
   );
 }
 
+function CatalogCard({
+  book,
+  hasBorrowHistory,
+}: {
+  book: Book & { borrowed_by: string | null };
+  hasBorrowHistory: boolean;
+}) {
+  const isOut = !!book.borrowed_by;
+  const content = (
+    <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-3.5 flex gap-3 items-start hover:shadow-md transition-all duration-200">
+      {book.thumbnail ? (
+        <Image
+          src={book.thumbnail}
+          alt={book.title}
+          width={44}
+          height={62}
+          className="rounded-xl object-cover shadow-sm shrink-0"
+          style={{ width: 44, height: 62, objectFit: 'cover' }}
+        />
+      ) : (
+        <div className="w-11 h-[62px] rounded-xl bg-muted flex items-center justify-center shrink-0">
+          <BookOpen className="w-5 h-5 text-muted-foreground/50" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className={`font-semibold text-sm leading-snug line-clamp-2 ${hasBorrowHistory ? 'text-foreground hover:text-brand transition-colors' : 'text-foreground'}`}>
+          {book.title}
+        </p>
+        {book.authors && book.authors.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{book.authors.join(', ')}</p>
+        )}
+        <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          isOut ? 'bg-warn-muted text-warn-muted-fg' : 'bg-success-muted text-success-muted-fg'
+        }`}>
+          {isOut ? `Out · ${book.borrowed_by}` : 'Available'}
+        </span>
+      </div>
+    </div>
+  );
+
+  if (hasBorrowHistory) {
+    return <Link href={`/books/${book.book_id}`}>{content}</Link>;
+  }
+  return content;
+}
+
 export default async function HomePage() {
   const { userId } = await auth();
-  const borrows = await getBorrows();
+  const [borrows, catalog] = await Promise.all([getBorrows(), getCatalogBooks()]);
   const borrowed = borrows.filter((b) => !b.returned_at);
   const returned = borrows.filter((b) => b.returned_at);
 
@@ -162,33 +223,36 @@ export default async function HomePage() {
   }, {});
   const people = Object.entries(byPerson);
 
+  const borrowedBookIds = new Set(borrows.map((b) => b.book_id));
+  const availableCount = catalog.filter((b) => !b.borrowed_by).length;
+
   return (
-    <div className="min-h-screen" style={{ background: '#F7F6F3' }}>
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+            <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-md shadow-brand/20">
               <Library className="w-4.5 h-4.5 text-white" style={{ width: 18, height: 18 }} />
             </div>
             <div>
-              <span className="font-bold text-slate-900 text-[15px] tracking-tight">OTSI LIBRARY</span>
+              <span className="font-bold text-foreground text-[15px] tracking-tight">OTSI LIBRARY</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Terminal />
             {userId ? (
               <Link href="/admin">
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold shadow-sm shadow-indigo-200">
+                <Button size="sm" className="bg-brand hover:bg-brand/90 text-white rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold shadow-sm shadow-brand/20">
                   <BookMarked style={{ width: 13, height: 13 }} />
                   Dashboard
                 </Button>
               </Link>
             ) : (
               <SignInButton mode="modal">
-                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold border-slate-200 text-slate-600 hover:bg-slate-50">
-                  {/* <LogIn style={{ width: 13, height: 13 }} /> */}
+                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold text-muted-foreground hover:bg-muted/50">
                   Admin
                 </Button>
               </SignInButton>
@@ -197,27 +261,27 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-2 ">
+      <main className="max-w-5xl mx-auto p-2">
 
         {/* Hero text */}
         <div className="mb-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Book Borrowings</h2>
-          <p className="text-slate-500 mt-1 text-sm">Track who has which books from Nagraj&apos;s library.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Book Borrowings</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Track who has which books from Nagraj&apos;s library.</p>
         </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-white rounded-2xl p-4 ring-1 ring-black/[0.05] shadow-sm">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total</p>
-            <p className="text-3xl font-bold text-slate-900 leading-none">{borrows.length}</p>
+          <div className="bg-card rounded-2xl p-4 ring-1 ring-foreground/5 shadow-sm">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total</p>
+            <p className="text-3xl font-bold text-foreground leading-none">{borrows.length}</p>
           </div>
-          <div className="bg-amber-50 rounded-2xl p-4 ring-1 ring-amber-100 shadow-sm">
-            <p className="text-[11px] font-semibold text-amber-500 uppercase tracking-wider mb-1">Out Now</p>
-            <p className="text-3xl font-bold text-amber-700 leading-none">{borrowed.length}</p>
+          <div className="bg-warn-muted rounded-2xl p-4 ring-1 ring-warn-muted/60 shadow-sm">
+            <p className="text-[11px] font-semibold text-warn uppercase tracking-wider mb-1">Out Now</p>
+            <p className="text-3xl font-bold text-warn-muted-fg leading-none">{borrowed.length}</p>
           </div>
-          <div className="bg-indigo-50 rounded-2xl p-4 ring-1 ring-indigo-100 shadow-sm">
-            <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-wider mb-1">People</p>
-            <p className="text-3xl font-bold text-indigo-700 leading-none">{people.length}</p>
+          <div className="bg-brand-muted rounded-2xl p-4 ring-1 ring-brand-muted/60 shadow-sm">
+            <p className="text-[11px] font-semibold text-brand uppercase tracking-wider mb-1">People</p>
+            <p className="text-3xl font-bold text-brand-muted-fg leading-none">{people.length}</p>
           </div>
         </div>
 
@@ -225,9 +289,9 @@ export default async function HomePage() {
         {people.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2.5 mb-5">
-              <Users className="w-4 h-4 text-amber-500" />
-              <h3 className="font-bold text-slate-800 text-[15px]">Currently Out</h3>
-              <span className="text-xs text-slate-400 font-medium">
+              <Users className="w-4 h-4 text-warn" />
+              <h3 className="font-bold text-foreground text-[15px]">Currently Out</h3>
+              <span className="text-xs text-muted-foreground font-medium">
                 {borrowed.length} book{borrowed.length > 1 ? 's' : ''} · {people.length} person{people.length > 1 ? 's' : ''}
               </span>
             </div>
@@ -241,11 +305,11 @@ export default async function HomePage() {
 
         {/* Returned */}
         {returned.length > 0 && (
-          <section>
+          <section className="mb-10">
             <div className="flex items-center gap-2.5 mb-5">
-              <BookOpen className="w-4 h-4 text-emerald-500" />
-              <h3 className="font-bold text-slate-800 text-[15px]">Returned</h3>
-              <span className="text-xs text-slate-400 font-medium">({returned.length})</span>
+              <BookOpen className="w-4 h-4 text-success" />
+              <h3 className="font-bold text-foreground text-[15px]">Returned</h3>
+              <span className="text-xs text-muted-foreground font-medium">({returned.length})</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {returned.map((b) => <ReturnedCard key={b.id} borrow={b} />)}
@@ -253,13 +317,35 @@ export default async function HomePage() {
           </section>
         )}
 
-        {borrows.length === 0 && (
-          <div className="text-center py-28">
-            <div className="w-16 h-16 bg-white rounded-3xl shadow-sm ring-1 ring-black/[0.06] flex items-center justify-center mx-auto mb-5">
-              <BookOpen className="w-7 h-7 text-slate-300" />
+        {/* Library Catalog */}
+        {catalog.length > 0 && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2.5 mb-5">
+              <BookPlus className="w-4 h-4 text-brand" />
+              <h3 className="font-bold text-foreground text-[15px]">Library Catalog</h3>
+              <span className="text-xs text-muted-foreground font-medium">
+                {catalog.length} book{catalog.length !== 1 ? 's' : ''} · {availableCount} available
+              </span>
             </div>
-            <p className="font-semibold text-slate-600">No records yet</p>
-            <p className="text-sm text-slate-400 mt-1">Borrow records will appear here.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {catalog.map((book) => (
+                <CatalogCard
+                  key={book.id}
+                  book={book}
+                  hasBorrowHistory={borrowedBookIds.has(book.book_id)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {borrows.length === 0 && catalog.length === 0 && (
+          <div className="text-center py-28">
+            <div className="w-16 h-16 bg-card rounded-3xl shadow-sm ring-1 ring-foreground/5 flex items-center justify-center mx-auto mb-5">
+              <BookOpen className="w-7 h-7 text-muted-foreground/50" />
+            </div>
+            <p className="font-semibold text-foreground/70">No records yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Borrow records will appear here.</p>
           </div>
         )}
       </main>

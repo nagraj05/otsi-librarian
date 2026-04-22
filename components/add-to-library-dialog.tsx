@@ -39,7 +39,7 @@ export function AddToLibraryDialog() {
       <Button
         onClick={() => setOpen(true)}
         variant="outline"
-        className="gap-2 rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+        className="gap-2 rounded-xl border-brand-muted/60 text-brand hover:bg-brand-muted"
       >
         <Plus className="w-4 h-4" />
         Add Book
@@ -49,8 +49,8 @@ export function AddToLibraryDialog() {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <div className="p-1.5 bg-indigo-100 rounded-lg">
-                <Library className="w-4 h-4 text-indigo-600" />
+              <div className="p-1.5 bg-brand-muted rounded-lg">
+                <Library className="w-4 h-4 text-brand" />
               </div>
               Add Book to Library
             </DialogTitle>
@@ -72,7 +72,7 @@ export function AddToLibraryDialog() {
             <Button
               onClick={handleSubmit}
               disabled={isPending || !selectedBook}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2"
+              className="bg-brand hover:bg-brand/90 text-white rounded-xl gap-2"
             >
               {isPending ? 'Adding...' : 'Add to Library'}
             </Button>

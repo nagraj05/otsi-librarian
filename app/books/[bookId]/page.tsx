@@ -85,7 +85,7 @@ export default async function BookPage({
   const uniqueBorrowers = new Set(borrows.map((r) => r.borrower_name)).size;
 
   return (
-    <div className="min-h-screen" style={{ background: '#F7F6F3' }}>
+    <div className="min-h-screen">
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden">
@@ -99,7 +99,7 @@ export default async function BookPage({
             />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/70 to-[#F7F6F3]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/70 to-background" />
 
         {/* Back nav */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-5">
@@ -141,7 +141,7 @@ export default async function BookPage({
             {/* Text */}
             <div className="flex-1 text-center sm:text-left pb-1">
               {b.book_categories && b.book_categories.length > 0 && (
-                <p className="text-xs font-bold text-indigo-300 uppercase tracking-[0.15em] mb-3">
+                <p className="text-xs font-bold text-brand/80 uppercase tracking-[0.15em] mb-3">
                   {b.book_categories[0]}
                 </p>
               )}
@@ -190,8 +190,6 @@ export default async function BookPage({
       {/* ── Body ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 -mt-6">
 
-    
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-7">
 
           {/* ── Left: Description + Details ── */}
@@ -199,20 +197,20 @@ export default async function BookPage({
 
             {b.book_description && (
               <Card>
-                <SectionHeader icon={<BookOpen className="w-4 h-4 text-indigo-500" />} title="About This Book" />
-                <p className="text-sm text-slate-600 leading-relaxed">{b.book_description}</p>
+                <SectionHeader icon={<BookOpen className="w-4 h-4 text-brand" />} title="About This Book" />
+                <p className="text-sm text-foreground/70 leading-relaxed">{b.book_description}</p>
               </Card>
             )}
 
             <Card>
-              <SectionHeader icon={<Tag className="w-4 h-4 text-indigo-500" />} title="Book Details" />
+              <SectionHeader icon={<Tag className="w-4 h-4 text-brand" />} title="Book Details" />
               <div className="grid grid-cols-2 gap-x-8 gap-y-5">
                 {b.book_publisher && <Detail label="Publisher" value={b.book_publisher} />}
                 {b.book_published_date && <Detail label="Published" value={b.book_published_date} />}
                 {b.book_isbn && <Detail label="ISBN" value={b.book_isbn} mono />}
                 {b.book_rating && (
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Rating</p>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Rating</p>
                     <div className="flex items-center gap-1.5">
                       {Array.from({ length: 5 }).map((_, i) => {
                         const full = Math.floor(Number(b.book_rating));
@@ -221,20 +219,20 @@ export default async function BookPage({
                           <Star key={i} style={{ width: 14, height: 14 }} className={
                             i < full ? 'text-amber-400 fill-amber-400'
                             : i === full && half ? 'text-amber-400 fill-amber-200'
-                            : 'text-slate-200 fill-slate-200'
+                            : 'text-foreground/20 fill-foreground/20'
                           } />
                         );
                       })}
-                      <span className="text-sm font-bold text-slate-700 ml-1">{Number(b.book_rating).toFixed(1)}</span>
+                      <span className="text-sm font-bold text-foreground/80 ml-1">{Number(b.book_rating).toFixed(1)}</span>
                     </div>
                   </div>
                 )}
                 {b.book_categories && b.book_categories.length > 0 && (
                   <div className="col-span-2">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Categories</p>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Categories</p>
                     <div className="flex flex-wrap gap-1.5">
                       {b.book_categories.map((cat) => (
-                        <span key={cat} className="text-xs font-semibold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">
+                        <span key={cat} className="text-xs font-semibold bg-brand-muted text-brand px-3 py-1 rounded-full border border-brand-muted/60">
                           {cat}
                         </span>
                       ))}
@@ -249,8 +247,8 @@ export default async function BookPage({
           <div className="space-y-5">
             <Card>
               <div className="flex items-center justify-between mb-5">
-                <SectionHeader icon={<Clock className="w-4 h-4 text-indigo-500" />} title="Borrow History" noMargin />
-                <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full border border-indigo-100">
+                <SectionHeader icon={<Clock className="w-4 h-4 text-brand" />} title="Borrow History" noMargin />
+                <span className="text-xs font-bold bg-brand-muted text-brand px-2.5 py-1 rounded-full border border-brand-muted/60">
                   {borrows.length}×
                 </span>
               </div>
@@ -263,7 +261,7 @@ export default async function BookPage({
                     <div key={record.id} className="relative flex gap-3 pb-5 last:pb-0">
                       {/* Timeline */}
                       {i < borrows.length - 1 && (
-                        <div className="absolute left-4 top-8 bottom-0 w-px bg-slate-100" />
+                        <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
                       )}
                       {/* Avatar */}
                       <div className={`w-8 h-8 rounded-full ${av.bg} ring-2 ${av.ring} flex items-center justify-center text-white text-[11px] font-extrabold shrink-0 z-10 shadow-sm`}>
@@ -272,25 +270,25 @@ export default async function BookPage({
 
                       <div className="flex-1 min-w-0 pt-0.5">
                         <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <p className="font-bold text-sm text-slate-800 leading-tight truncate">
+                          <p className="font-bold text-sm text-foreground leading-tight truncate">
                             {record.borrower_name}
                           </p>
                           <Badge className={`text-[10px] px-2 py-0.5 rounded-full border-0 shrink-0 font-bold ${
-                            isActive ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                            isActive ? 'bg-warn-muted text-warn-muted-fg' : 'bg-success-muted text-success-muted-fg'
                           }`}>
                             {isActive ? 'Active' : 'Done'}
                           </Badge>
                         </div>
 
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-muted-foreground">
                           {formatDateShort(record.borrowed_at)}
                           {record.returned_at && (
-                            <span className="text-emerald-500"> → {formatDateShort(record.returned_at)}</span>
+                            <span className="text-success"> → {formatDateShort(record.returned_at)}</span>
                           )}
                         </p>
 
                         {record.notes && (
-                          <p className="text-[11px] text-slate-500 mt-1.5 italic bg-slate-50 rounded-xl px-2.5 py-1.5 border border-slate-100">
+                          <p className="text-[11px] text-muted-foreground mt-1.5 italic bg-muted/50 rounded-xl px-2.5 py-1.5 border border-border">
                             &ldquo;{record.notes}&rdquo;
                           </p>
                         )}
@@ -302,13 +300,13 @@ export default async function BookPage({
             </Card>
 
             {b.book_isbn && (
-              <div className="bg-white rounded-2xl ring-1 ring-black/[0.05] shadow-sm p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                  <Hash className="w-4 h-4 text-slate-400" />
+              <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-4 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <Hash className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ISBN</p>
-                  <p className="text-sm font-mono font-semibold text-slate-700 mt-0.5">{b.book_isbn}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ISBN</p>
+                  <p className="text-sm font-mono font-semibold text-foreground/80 mt-0.5">{b.book_isbn}</p>
                 </div>
               </div>
             )}
@@ -331,7 +329,7 @@ function Chip({ icon, label }: { icon: React.ReactNode; label: string }) {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-3xl ring-1 ring-black/[0.05] shadow-sm p-6">
+    <div className="bg-card rounded-3xl ring-1 ring-foreground/5 shadow-sm p-6">
       {children}
     </div>
   );
@@ -343,7 +341,7 @@ function SectionHeader({
   icon: React.ReactNode; title: string; noMargin?: boolean;
 }) {
   return (
-    <h2 className={`font-bold text-slate-900 text-[15px] flex items-center gap-2 ${noMargin ? '' : 'mb-4'}`}>
+    <h2 className={`font-bold text-foreground text-[15px] flex items-center gap-2 ${noMargin ? '' : 'mb-4'}`}>
       {icon}{title}
     </h2>
   );
@@ -352,31 +350,8 @@ function SectionHeader({
 function Detail({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm font-semibold text-slate-800 mt-0.5 ${mono ? 'font-mono' : ''}`}>{value}</p>
-    </div>
-  );
-}
-
-function StatChip({
-  label, value, color, icon,
-}: {
-  label: string; value: string | number; color: string; icon?: React.ReactNode;
-}) {
-  const palettes: Record<string, string> = {
-    indigo: 'bg-indigo-50 ring-indigo-100 text-indigo-700',
-    violet: 'bg-violet-50 ring-violet-100 text-violet-700',
-    amber:  'bg-amber-50 ring-amber-100 text-amber-700',
-    emerald:'bg-emerald-50 ring-emerald-100 text-emerald-700',
-  };
-  const cls = palettes[color] ?? palettes.indigo;
-  return (
-    <div className={`${cls} rounded-2xl p-4 ring-1 shadow-sm`}>
-      <div className="flex items-center gap-1.5 mb-1">
-        {icon}
-        <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</p>
-      </div>
-      <p className="text-2xl font-extrabold leading-none">{value}</p>
+      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? 'font-mono' : ''}`}>{value}</p>
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function AddBorrowDialog() {
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 rounded-xl px-5 shadow-md shadow-indigo-200"
+        className="bg-brand hover:bg-brand/90 text-white gap-2 rounded-xl px-5 shadow-md shadow-brand/20"
       >
         <Plus className="w-4 h-4" />
         Add Borrow
@@ -73,8 +73,8 @@ export function AddBorrowDialog() {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <div className="p-1.5 bg-indigo-100 rounded-lg">
-                <BookOpen className="w-4 h-4 text-indigo-600" />
+              <div className="p-1.5 bg-brand-muted rounded-lg">
+                <BookOpen className="w-4 h-4 text-brand" />
               </div>
               Add Borrow Record
             </DialogTitle>
@@ -145,7 +145,7 @@ export function AddBorrowDialog() {
             <Button
               onClick={handleSubmit}
               disabled={isPending || !borrowerName.trim() || !selectedBook}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2"
+              className="bg-brand hover:bg-brand/90 text-white rounded-xl gap-2"
             >
               {isPending ? 'Saving...' : 'Save Record'}
             </Button>
