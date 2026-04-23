@@ -39,6 +39,21 @@ export function NotificationBell({ initial }: { initial: Notification[] }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // poll for new notifications every 20 seconds
+  useEffect(() => {
+    async function poll() {
+      try {
+        const res = await fetch('/api/notifications');
+        if (!res.ok) return;
+        const data: Notification[] = await res.json();
+        setNotifications(data);
+      } catch {}
+    }
+
+    const id = setInterval(poll, 20_000);
+    return () => clearInterval(id);
+  }, []);
+
   async function handleMarkAll() {
     await markAllRead();
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));

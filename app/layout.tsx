@@ -1,16 +1,22 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { DM_Sans, Fraunces } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/sonner';
 import { Providers } from '@/components/providers';
 import { syncUser } from '@/lib/sync-user';
 import './globals.css';
 
-const plusJakarta = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ['latin'],
-  variable: '--font-plus-jakarta',
-  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-dm-sans',
   display: 'swap',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  axes: ['opsz'],
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,7 @@ export default async function RootLayout({
   await syncUser();
   return (
     <ClerkProvider afterSignOutUrl="/">
-      <html lang="en" className={`${plusJakarta.variable} h-full`} suppressHydrationWarning>
+      <html lang="en" className={`${dmSans.variable} ${fraunces.variable} h-full`} suppressHydrationWarning>
         <body className="min-h-full flex flex-col antialiased">
           <Providers>
             {children}

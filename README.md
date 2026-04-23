@@ -4,13 +4,13 @@
  ██████╗ ████████╗███████╗██╗    ██╗     ██╗██████╗ ██████╗  █████╗ ██████╗ ██╗ █████╗ ███╗   ██╗
 ██╔═══██╗╚══██╔══╝██╔════╝██║    ██║     ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗████╗  ██║
 ██║   ██║   ██║   ███████╗██║    ██║     ██║██████╔╝██████╔╝███████║██████╔╝██║███████║██╔██╗ ██║
-██║   ██║   ██║   ╚════██║██║    ██║     ██║██╔══██╗██╔══██╗██╔══██║██╔══██╗██║██╔══██║██║╚██╗██║
+██║   ██║   ██║   ╚════██║██║    ██║     ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗██║╚██╗██║
 ╚██████╔╝   ██║   ███████║██║    ███████╗██║██████╔╝██║  ██║██║  ██║██║  ██║██║██║  ██║██║ ╚████║
  ╚═════╝    ╚═╝   ╚══════╝╚═╝    ╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
 ```
 
-**Know who has your books. Always.**  
-A clean office book tracker — public borrow feed, admin dashboard, full Google Books metadata.
+**A self-service library for the office.**  
+Browse the catalog, request books, track reading streaks, and compete on the leaderboard.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
@@ -25,9 +25,9 @@ A clean office book tracker — public borrow feed, admin dashboard, full Google
 
 ## ✦ What is OTSI Librarian?
 
-OTSI Librarian is a lightweight office book-lending tracker. Anyone on the team can open the home page and immediately see which books are checked out and who has them. The admin (you) logs in to add new borrow records, mark books as returned, or delete entries.
+OTSI Librarian is a self-service book lending system for the office. Users sign up, browse the catalog, and request books — the admin approves or rejects requests and hands the book over physically. Once a book is in hand, users log their daily reading to build streaks and climb the leaderboard.
 
-When you add a book, the title is looked up via the Google Books API and all metadata — cover art, authors, description, publisher, page count, categories, ISBN, and rating — is fetched and stored automatically.
+Everything is in-app: no WhatsApp, no email — notifications appear in the bell icon and update automatically every 20 seconds via polling.
 
 ---
 
@@ -35,23 +35,24 @@ When you add a book, the title is looked up via the Google Books API and all met
 
 | | |
 |---|---|
-| 📖 **Public borrow feed** | Anyone can see who has which books, grouped by borrower |
-| 🔐 **Admin-only login** | Clerk auth — only you can add or manage records |
-| 🔍 **Google Books search** | Autocomplete as you type; cover + authors shown inline |
-| 📚 **Full metadata storage** | Cover, description, publisher, pages, ISBN, rating saved at borrow time |
-| 🪐 **Book detail pages** | Per-book page with hero cover, details grid, and full borrow history timeline |
-| ↩️ **Return tracking** | Mark a book returned — timestamp recorded automatically |
-| 🗑️ **Delete records** | Remove any borrow entry from the admin dashboard |
-| 📱 **Mobile responsive** | Cards on mobile, table on desktop — both fully polished |
-| ⚡ **Skeleton loading** | Every page has a matching loading skeleton for instant perceived performance |
-| 🎨 **Consistent design** | Plus Jakarta Sans, warm `#F7F6F3` background, shadcn/ui components throughout |
-| 💻 **Built-in terminal** | Browser terminal — browse the catalog, check borrow status, and message the admin via WhatsApp |
+| 📖 **Catalog** | Browse all library books, request or join waitlist |
+| 🔐 **Role-based auth** | Clerk auth — users self-serve, single admin manages requests |
+| 🔍 **Google Books search** | Admin adds books by searching — cover, authors, metadata fetched automatically |
+| ✅ **Borrow workflow** | Users request → admin approves with taken/due date → user collects physically |
+| ⏳ **Waitlist** | If a book is out, users can join the waitlist and get notified when it's returned |
+| 📅 **Daily reading log** | Log pages read per book per day — progress bar shows completion % |
+| 🔥 **Reading streaks** | Consecutive days logged build your streak |
+| 🏆 **Leaderboard** | Public ranking by streak, tiebroken by total pages — links to each user's profile |
+| 👤 **Public profiles** | `/@username` — reading history, currently reading, streak, stats |
+| 🔔 **In-app notifications** | Approve, reject, waitlist alerts — bell polls every 20s, no refresh needed |
+| 🌙 **Dark mode** | Warm parchment light / deep brown dark — toggled per user |
+| 📱 **Mobile responsive** | Fully polished on all screen sizes |
 
 ---
 
 ## ✦ Requirements
 
-- **Node.js 18+** or **Bun 1+**
+- **Bun 1+** (or Node.js 18+)
 - **Neon** (or any PostgreSQL) database
 - **Clerk** account — publishable + secret keys
 - **Google Books API key** — optional but avoids rate limits
@@ -79,19 +80,20 @@ cp .env.example .env.local
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
 CLERK_SECRET_KEY=sk_...
 DATABASE_URL=postgresql://...
-GOOGLE_BOOKS_API_KEY=...        # optional
+ADMIN_CLERK_ID=user_...          # your Clerk user ID — grants admin role
+GOOGLE_BOOKS_API_KEY=...         # optional
 ```
 
 ```bash
-# 4. Create the database table (run once)
-#    Start the dev server, then visit:
-#    http://localhost:3000/api/setup
+# 4. Set up the database (run once after starting the dev server)
+#    Visit: http://localhost:3000/api/reset
+#    (or /api/migrate to add columns to an existing DB)
 
 # 5. Start
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), click **Admin Login**, and add your first record.
+Open [http://localhost:3000](http://localhost:3000) and sign in. If your Clerk ID matches `ADMIN_CLERK_ID` you'll have admin access automatically.
 
 ```bash
 bun build      # production build
@@ -105,13 +107,16 @@ bun lint       # ESLint check
 
 | Route | Access | Description |
 |---|---|---|
-| `/` | Public | Home — currently borrowed (grouped by person) + returned history |
-| `/admin` | Auth only | Add borrows, mark returns, delete records |
-| `/books/[bookId]` | Public | Book detail page — metadata, stats, borrow timeline |
+| `/` | Public | Landing page — sign in to enter |
+| `/dashboard` | Auth | Personal dashboard — active borrows, reading log, streak |
+| `/catalog` | Auth | Browse all books — request, waitlist, availability status |
+| `/leaderboard` | Auth | Ranked by reading streak + total pages |
+| `/@username` | Auth | Public user profile — stats, currently reading, history |
+| `/admin` | Admin only | Manage requests, active borrows, library catalog |
 | `/api/books/search` | Internal | Google Books search proxy (`?q=query`) |
-| `/api/catalog` | Internal | Returns all books with borrow status (used by terminal) |
-| `/api/notify` | Internal | Sends a WhatsApp message to the admin (used by terminal `message` command) |
-| `/api/setup` | One-time | Creates the `borrows` table in the database |
+| `/api/notifications` | Internal | Returns current user's notifications (used by polling) |
+| `/api/reset` | One-time | Drops and recreates all tables fresh |
+| `/api/migrate` | One-time | Idempotent — adds new columns to existing tables |
 
 ---
 
@@ -120,31 +125,41 @@ bun lint       # ESLint check
 ```
 otsi-librarian/
 ├── app/
-│   ├── page.tsx                  ← Public home — borrow feed grouped by person
-│   ├── layout.tsx                ← Root shell: ClerkProvider, font, Toaster
-│   ├── loading.tsx               ← Home page skeleton
-│   ├── globals.css               ← Tailwind v4 imports + CSS variables
+│   ├── page.tsx                     ← Landing page (guests) / redirect (authed)
+│   ├── layout.tsx                   ← Root shell: ClerkProvider, fonts, Toaster, syncUser
+│   ├── globals.css                  ← Tailwind v4 + warm color palette (light + dark)
+│   ├── actions.ts                   ← All server actions
+│   ├── dashboard/page.tsx           ← User dashboard — borrows, reading log
+│   ├── catalog/page.tsx             ← Book catalog with request/waitlist buttons
+│   ├── leaderboard/page.tsx         ← Streak leaderboard
+│   ├── users/[username]/page.tsx    ← Public user profile
 │   ├── admin/
-│   │   ├── page.tsx              ← Admin dashboard — table + mobile cards
-│   │   └── loading.tsx           ← Admin skeleton
-│   ├── books/[bookId]/
-│   │   ├── page.tsx              ← Book detail — hero, metadata, history timeline
-│   │   └── loading.tsx           ← Book detail skeleton
+│   │   ├── layout.tsx               ← Admin role guard (redirects non-admins)
+│   │   └── page.tsx                 ← Admin dashboard — pending, active, catalog
 │   └── api/
-│       ├── books/search/route.ts ← Google Books API proxy
-│       └── setup/route.ts        ← One-time DB table creation
+│       ├── notifications/route.ts   ← Notification polling endpoint
+│       ├── books/search/route.ts    ← Google Books proxy
+│       ├── reset/route.ts           ← Full DB reset
+│       └── migrate/route.ts         ← Idempotent DB migration
 ├── components/
-│   ├── add-borrow-dialog.tsx     ← Modal: borrower + book search + date + notes
-│   ├── book-search.tsx           ← Debounced autocomplete against Google Books
-│   ├── return-button.tsx         ← Mark-returned server action button
-│   ├── delete-button.tsx         ← Delete record server action button
-│   ├── terminal.tsx              ← In-browser terminal (ls, cat, message admin…)
-│   └── ui/                       ← shadcn/ui primitives (badge, button, dialog…)
+│   ├── navbar.tsx                   ← Shared nav (async, fetches notifications)
+│   ├── notification-bell.tsx        ← Bell icon + dropdown + 20s polling
+│   ├── log-reading-form.tsx         ← Per-book daily reading logger
+│   ├── request-button.tsx           ← Request / Waitlist button
+│   ├── request-row-actions.tsx      ← Admin approve/reject row
+│   ├── approve-request-dialog.tsx   ← Approve with taken/due date inputs
+│   ├── reject-request-dialog.tsx    ← Reject with optional reason
+│   ├── mark-returned-button.tsx     ← Mark book returned
+│   ├── add-to-library-dialog.tsx    ← Admin: add book to catalog
+│   ├── remove-book-button.tsx       ← Admin: remove book from catalog
+│   ├── theme-toggle.tsx             ← Light/dark toggle
+│   └── ui/                          ← shadcn/ui primitives
 ├── lib/
-│   ├── db.ts                     ← Neon SQL client
-│   └── types.ts                  ← Borrow + GoogleBook TypeScript interfaces
-├── app/actions.ts                ← Server actions: addBorrow, returnBook, deleteBorrow
-└── proxy.ts                      ← Clerk middleware (Next.js 16 uses proxy.ts)
+│   ├── db.ts                        ← Neon SQL client
+│   ├── types.ts                     ← TypeScript interfaces
+│   ├── sync-user.ts                 ← Upsert user on every load, assign admin role
+│   └── streak.ts                    ← Reading streak calculation
+└── proxy.ts                         ← Clerk middleware (Next.js 16)
 ```
 
 ---
@@ -152,21 +167,26 @@ otsi-librarian/
 ## ✦ How It Works
 
 ```
-Admin types a book title
-  └─► /api/books/search?q=...
-        └─► Google Books API → volumeInfo (cover, authors, pages, ISBN, rating…)
-              └─► BookSearch dropdown → user picks a result
-                    └─► addBorrow() server action
-                          └─► INSERT INTO borrows (all metadata stored once)
-                                └─► revalidatePath('/') + revalidatePath('/admin')
+User requests a book
+  └─► requestBook() server action
+        └─► INSERT INTO borrows (status = 'pending')
+              └─► notify admin via notifications table
 
-Public visitor opens /
-  └─► getBorrows() → SELECT * FROM borrows ORDER BY borrowed_at DESC
-        └─► reduce into Record<borrowerName, Borrow[]>
-              └─► PersonCard grid (currently out) + ReturnedCard grid
+Admin approves
+  └─► approveRequest(borrowId, takenDate, dueDate)
+        └─► UPDATE borrows SET status = 'active'
+              └─► notify user → bell updates within 20s
+
+User logs reading
+  └─► logReading(borrowId, pagesRead)
+        └─► UPSERT reading_logs (one row per user/book/day)
+              └─► streak recalculated on next dashboard load
+
+Book returned
+  └─► markReturned(borrowId)
+        └─► UPDATE borrows SET status = 'returned'
+              └─► notify next person on waitlist if any
 ```
-
-Book detail pages read entirely from the **database** — no second API call needed because all metadata was captured at borrow time.
 
 ---
 
@@ -176,12 +196,13 @@ Book detail pages read entirely from the **database** — no second API call nee
 |---|---|---|
 | [Next.js](https://nextjs.org) | 16 | App Router, server actions, API routes |
 | [React](https://react.dev) | 19 | UI and client components |
-| [Clerk](https://clerk.com) | v7 | Authentication — login modal, session, `auth()` |
-| [Neon](https://neon.tech) | — | Serverless PostgreSQL (`@neondatabase/serverless`) |
+| [Clerk](https://clerk.com) | v7 | Auth — sign in, session, role assignment |
+| [Neon](https://neon.tech) | — | Serverless PostgreSQL |
 | [Tailwind CSS](https://tailwindcss.com) | v4 | Utility styling, CSS variable theming |
-| [shadcn/ui](https://ui.shadcn.com) | base-nova | Badge, Button, Dialog, Sonner toast |
+| [shadcn/ui](https://ui.shadcn.com) | — | Button, Dialog, Sonner toast, and more |
 | [Lucide React](https://lucide.dev) | — | Icons |
-| [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) | — | UI font via `next/font/google` |
+| [DM Sans](https://fonts.google.com/specimen/DM+Sans) | — | UI body font |
+| [Fraunces](https://fonts.google.com/specimen/Fraunces) | — | Serif display font |
 | [Bun](https://bun.sh) | 1 | Package manager + runtime |
 
 ---
