@@ -5,37 +5,32 @@ import { auth } from '@clerk/nextjs/server';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notification-bell';
+import { NavLinks } from '@/components/nav-links';
+import { MobileMenu } from '@/components/mobile-menu';
 import { Notification } from '@/lib/types';
 import sql from '@/lib/db';
 
-interface NavbarProps {
-  isAdmin?: boolean;
-  activePath?: 'dashboard' | 'catalog' | 'leaderboard' | 'admin';
-}
-
-async function getNotifications(userId: string): Promise<Notification[]> {
-  try {
-    const rows = await sql`
+async function getNavData(userId: string) {
+  const [notifRows, userRow] = await Promise.all([
+    sql`
       SELECT * FROM notifications
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
       LIMIT 30
-    `;
-    return rows as Notification[];
-  } catch {
-    return [];
-  }
+    `,
+    sql`SELECT role FROM users WHERE id = ${userId}`,
+  ]);
+  return {
+    notifications: notifRows as Notification[],
+    isAdmin: (userRow[0] as { role: string } | undefined)?.role === 'admin',
+  };
 }
 
-export async function Navbar({ isAdmin, activePath }: NavbarProps) {
+export async function Navbar() {
   const { userId } = await auth();
-  const notifications = userId ? await getNotifications(userId) : [];
-
-  const navLinks = [
-    { href: '/dashboard',   label: 'Dashboard',   key: 'dashboard' },
-    { href: '/catalog',     label: 'Catalog',     key: 'catalog' },
-    { href: '/leaderboard', label: 'Leaderboard', key: 'leaderboard' },
-  ];
+  const { notifications, isAdmin } = userId
+    ? await getNavData(userId)
+    : { notifications: [], isAdmin: false };
 
   return (
     <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
@@ -48,35 +43,26 @@ export async function Navbar({ isAdmin, activePath }: NavbarProps) {
           <span className="font-bold text-foreground text-[14px] tracking-tight hidden sm:block">OTSI LIBRARY</span>
         </Link>
 
-        {/* Nav links */}
-        <nav className="flex items-center gap-0.5">
-          {navLinks.map(({ href, label, key }) => (
-            <Link
-              key={key}
-              href={href}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ${
-                activePath === key
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
+        {/* Desktop nav links */}
+        <NavLinks />
 
         {/* Right side */}
         <div className="flex items-center gap-2 shrink-0">
-          <ThemeToggle />
-          {isAdmin && (
-            <Link href="/admin">
-              <Button size="sm" variant="outline" className="rounded-xl h-8 px-3 text-[12px] font-semibold hidden sm:flex">
-                Admin
-              </Button>
-            </Link>
-          )}
+          <div className="hidden sm:flex items-center gap-2">
+            <ThemeToggle />
+            {isAdmin && (
+              <Link href="/admin">
+                <Button size="sm" variant="outline" className="rounded-xl h-8 px-3 text-[12px] font-semibold">
+                  Admin
+                </Button>
+              </Link>
+            )}
+          </div>
           <NotificationBell initial={notifications} />
-          <UserButton />
+          <div className="hidden sm:block">
+            <UserButton />
+          </div>
+          <MobileMenu isAdmin={isAdmin} />
         </div>
       </div>
     </header>

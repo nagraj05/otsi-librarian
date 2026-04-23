@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import sql from '@/lib/db';
+import { Navbar } from '@/components/navbar';
 
 async function isAdmin(userId: string) {
   const rows = await sql`SELECT role FROM users WHERE id = ${userId} AND role = 'admin'`;
@@ -14,5 +15,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = await isAdmin(userId);
   if (!admin) redirect('/dashboard');
 
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
 }

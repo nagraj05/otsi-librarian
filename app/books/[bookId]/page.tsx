@@ -70,16 +70,37 @@ function getAvatar(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 }
 
+async function getBook(bookId: string) {
+  const rows = await sql`SELECT * FROM books WHERE book_id = ${bookId}`;
+  return rows[0] as {
+    book_id: string; title: string; authors: string[]; thumbnail: string | null;
+    description: string | null; publisher: string | null; published_date: string | null;
+    page_count: number | null; categories: string[] | null; isbn: string | null;
+    rating: number | null;
+  } | undefined;
+}
+
 export default async function BookPage({
   params,
 }: {
   params: Promise<{ bookId: string }>;
 }) {
   const { bookId } = await params;
-  const borrows = await getBookBorrows(bookId);
-  if (borrows.length === 0) notFound();
+  const [book, borrows] = await Promise.all([getBook(bookId), getBookBorrows(bookId)]);
+  if (!book) notFound();
 
-  const b = borrows[0];
+  // Use books table as source of truth for metadata; fall back to borrow snapshot
+  const b = {
+    book_title: book.title,
+    book_authors: book.authors,
+    book_thumbnail: book.thumbnail,
+    book_categories: book.categories,
+    book_published_date: book.published_date,
+    book_publisher: book.publisher,
+    book_isbn: book.isbn,
+    book_rating: book.rating,
+    book_description: book.description,
+  };
   const currentBorrow = borrows.find((r) => !r.returned_at);
   const totalBorrows = borrows.length;
   const uniqueBorrowers = new Set(borrows.map((r) => r.borrower_name)).size;
@@ -104,11 +125,11 @@ export default async function BookPage({
         {/* Back nav */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-5">
           <Link
-            href="/"
+            href="/catalog"
             className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors font-medium group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back to Library
+            Back to Catalog
           </Link>
         </div>
 
