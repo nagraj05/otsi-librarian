@@ -1,307 +1,77 @@
-import { BookOpen, BookMarked, Library, Users, BookPlus, ChevronRight } from 'lucide-react';
-import { SignInButton } from '@clerk/nextjs';
+import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
-import Link from 'next/link';
-import Image from 'next/image';
+import { SignInButton } from '@clerk/nextjs';
+import { Library, BookOpen, Flame, Bell, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Terminal } from '@/components/terminal';
 import { ThemeToggle } from '@/components/theme-toggle';
-import sql from '@/lib/db';
-import { Borrow, Book } from '@/lib/types';
 
-async function getBorrows(): Promise<Borrow[]> {
-  try {
-    const rows = await sql`SELECT * FROM borrows ORDER BY borrowed_at DESC`;
-    return rows as Borrow[];
-  } catch {
-    return [];
-  }
-}
-
-async function getCatalogBooks(): Promise<(Book & { borrowed_by: string | null })[]> {
-  try {
-    const rows = await sql`
-      SELECT b.*, br.borrower_name AS borrowed_by
-      FROM books b
-      LEFT JOIN borrows br ON b.book_id = br.book_id AND br.returned_at IS NULL
-      ORDER BY b.title ASC
-    `;
-    return rows as (Book & { borrowed_by: string | null })[];
-  } catch {
-    return [];
-  }
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-const AVATAR_COLORS = [
-  { bg: 'bg-violet-500', light: 'bg-violet-100 text-violet-700' },
-  { bg: 'bg-amber-500',  light: 'bg-amber-100 text-amber-700' },
-  { bg: 'bg-emerald-500',light: 'bg-emerald-100 text-emerald-700' },
-  { bg: 'bg-rose-500',   light: 'bg-rose-100 text-rose-700' },
-  { bg: 'bg-sky-500',    light: 'bg-sky-100 text-sky-700' },
-  { bg: 'bg-orange-500', light: 'bg-orange-100 text-orange-700' },
-];
-
-function getInitials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-}
-function getColor(name: string) {
-  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-}
-
-function PersonCard({ name, borrows }: { name: string; borrows: Borrow[] }) {
-  const color = getColor(name);
-  return (
-    <div className="bg-card rounded-3xl shadow-sm ring-1 ring-foreground/5 overflow-hidden hover:shadow-md transition-all duration-300">
-      {/* Person header */}
-      <div className="px-5 pt-5 pb-4 flex items-center gap-3.5">
-        <div className={`w-10 h-10 rounded-2xl ${color.bg} flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}>
-          {getInitials(name)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground truncate text-[15px]">{name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {borrows.length} book{borrows.length > 1 ? 's' : ''} borrowed
-          </p>
-        </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${color.light}`}>
-          {borrows.length}
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div className="h-px bg-border mx-5" />
-
-      {/* Books list */}
-      <div className="px-5 py-4 space-y-4">
-        {borrows.map((b, i) => (
-          <div key={b.id}>
-            <div className="flex gap-3.5 items-start">
-              {/* Cover */}
-              <Link href={`/books/${b.book_id}`} className="shrink-0 block group">
-                {b.book_thumbnail ? (
-                  <Image
-                    src={b.book_thumbnail}
-                    alt={b.book_title}
-                    width={44}
-                    height={62}
-                    className="rounded-xl object-cover shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200"
-                    style={{ width: 44, height: 62, objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div className="w-11 h-[62px] rounded-xl bg-muted flex items-center justify-center group-hover:bg-brand-muted transition-colors">
-                    <BookOpen className="w-5 h-5 text-muted-foreground group-hover:text-brand transition-colors" />
-                  </div>
-                )}
-              </Link>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0 pt-0.5">
-                <Link
-                  href={`/books/${b.book_id}`}
-                  className="font-semibold text-sm text-foreground leading-snug line-clamp-2 hover:text-brand transition-colors"
-                >
-                  {b.book_title}
-                </Link>
-                {b.book_authors && b.book_authors.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{b.book_authors.join(', ')}</p>
-                )}
-                <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-warn" />
-                  Since {formatDate(b.borrowed_at)}
-                </p>
-              </div>
-            </div>
-            {i < borrows.length - 1 && <div className="h-px bg-border/50 mt-4" />}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ReturnedCard({ borrow }: { borrow: Borrow }) {
-  return (
-    <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm flex gap-3.5 items-center p-3.5 hover:shadow-md transition-all duration-200 group">
-      <Link href={`/books/${borrow.book_id}`} className="shrink-0">
-        {borrow.book_thumbnail ? (
-          <Image
-            src={borrow.book_thumbnail}
-            alt={borrow.book_title}
-            width={36}
-            height={50}
-            className="rounded-lg object-cover shadow-sm group-hover:scale-105 transition-transform duration-200"
-            style={{ width: 36, height: 50, objectFit: 'cover' }}
-          />
-        ) : (
-          <div className="w-9 h-[50px] rounded-lg bg-muted flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-muted-foreground/50" />
-          </div>
-        )}
-      </Link>
-      <div className="flex-1 min-w-0">
-        <Link
-          href={`/books/${borrow.book_id}`}
-          className="font-semibold text-sm text-foreground/80 line-clamp-1 hover:text-brand transition-colors"
-        >
-          {borrow.book_title}
-        </Link>
-        <p className="text-xs text-muted-foreground mt-0.5 truncate">{borrow.borrower_name}</p>
-      </div>
-      <div className="text-right shrink-0">
-        <span className="inline-block text-[11px] font-medium bg-success-muted text-success-muted-fg px-2 py-0.5 rounded-full">
-          Returned
-        </span>
-        <p className="text-[11px] text-muted-foreground mt-1">{formatDate(borrow.returned_at!)}</p>
-      </div>
-    </div>
-  );
-}
-
-
-export default async function HomePage() {
+export default async function LandingPage() {
   const { userId } = await auth();
-  const [borrows, catalog] = await Promise.all([getBorrows(), getCatalogBooks()]);
-  const borrowed = borrows.filter((b) => !b.returned_at);
-  const returned = borrows.filter((b) => b.returned_at);
-
-  const byPerson = borrowed.reduce<Record<string, Borrow[]>>((acc, b) => {
-    (acc[b.borrower_name] ??= []).push(b);
-    return acc;
-  }, {});
-  const people = Object.entries(byPerson);
-
-  const availableCount = catalog.filter((b) => !b.borrowed_by).length;
+  if (userId) redirect('/dashboard');
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col">
+      {/* Nav */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-md shadow-brand/20">
               <Library className="w-4.5 h-4.5 text-white" style={{ width: 18, height: 18 }} />
             </div>
-            <div>
-              <span className="font-bold text-foreground text-[15px] tracking-tight">OTSI LIBRARY</span>
-            </div>
+            <span className="font-bold text-foreground text-[15px] tracking-tight">OTSI LIBRARY</span>
           </div>
-
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Terminal />
-            {userId ? (
-              <Link href="/admin">
-                <Button size="sm" className="bg-brand hover:bg-brand/90 text-white rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold shadow-sm shadow-brand/20">
-                  <BookMarked style={{ width: 13, height: 13 }} />
-                  Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <SignInButton mode="modal">
-                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 px-4 text-[13px] font-semibold text-muted-foreground hover:bg-muted/50">
-                  Admin
-                </Button>
-              </SignInButton>
-            )}
+            <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+              <Button size="sm" className="bg-brand hover:bg-brand/90 text-white rounded-xl h-8 px-4 text-[13px] font-semibold shadow-sm shadow-brand/20">
+                Sign in
+              </Button>
+            </SignInButton>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-2">
-
-        {/* Hero text */}
-        <div className="mb-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Book Borrowings</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Track who has which books from Nagraj&apos;s library.</p>
+      {/* Hero */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-brand flex items-center justify-center shadow-xl shadow-brand/30 mb-6">
+          <Library className="w-8 h-8 text-white" />
         </div>
+        <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight mb-4">
+          OTSI Library
+        </h1>
+        <p className="text-muted-foreground text-base sm:text-lg max-w-md mb-8 leading-relaxed">
+          Borrow books, track your reading, build streaks. A private library for the OTSI team.
+        </p>
+        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+          <Button size="lg" className="bg-brand hover:bg-brand/90 text-white rounded-xl px-8 font-semibold shadow-md shadow-brand/25">
+            Get started
+          </Button>
+        </SignInButton>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-card rounded-2xl p-4 ring-1 ring-foreground/5 shadow-sm">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total</p>
-            <p className="text-3xl font-bold text-foreground leading-none">{borrows.length}</p>
-          </div>
-          <div className="bg-warn-muted rounded-2xl p-4 ring-1 ring-warn-muted/60 shadow-sm">
-            <p className="text-[11px] font-semibold text-warn uppercase tracking-wider mb-1">Out Now</p>
-            <p className="text-3xl font-bold text-warn-muted-fg leading-none">{borrowed.length}</p>
-          </div>
-          <div className="bg-brand-muted rounded-2xl p-4 ring-1 ring-brand-muted/60 shadow-sm">
-            <p className="text-[11px] font-semibold text-brand uppercase tracking-wider mb-1">People</p>
-            <p className="text-3xl font-bold text-brand-muted-fg leading-none">{people.length}</p>
-          </div>
-        </div>
-
-        {/* Currently Borrowed */}
-        {people.length > 0 && (
-          <section className="mb-10">
-            <div className="flex items-center gap-2.5 mb-5">
-              <Users className="w-4 h-4 text-warn" />
-              <h3 className="font-bold text-foreground text-[15px]">Currently Out</h3>
-              <span className="text-xs text-muted-foreground font-medium">
-                {borrowed.length} book{borrowed.length > 1 ? 's' : ''} · {people.length} person{people.length > 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {people.map(([name, books]) => (
-                <PersonCard key={name} name={name} borrows={books} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Returned */}
-        {returned.length > 0 && (
-          <section className="mb-10">
-            <div className="flex items-center gap-2.5 mb-5">
-              <BookOpen className="w-4 h-4 text-success" />
-              <h3 className="font-bold text-foreground text-[15px]">Returned</h3>
-              <span className="text-xs text-muted-foreground font-medium">({returned.length})</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-              {returned.map((b) => <ReturnedCard key={b.id} borrow={b} />)}
-            </div>
-          </section>
-        )}
-
-        {/* Library Catalog link */}
-        <section className="mb-10">
-          <Link
-            href="/books-catalog"
-            className="flex items-center justify-between bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-4 hover:shadow-md transition-all duration-200 group"
-          >
-            <div className="flex items-center gap-3">
+        {/* Feature pills */}
+        <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl w-full">
+          {[
+            { icon: BookOpen, label: 'Browse catalog' },
+            { icon: Users,    label: 'Request books' },
+            { icon: Flame,    label: 'Reading streaks' },
+            { icon: Bell,     label: 'Notifications' },
+          ].map(({ icon: Icon, label }) => (
+            <div
+              key={label}
+              className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-4 flex flex-col items-center gap-2"
+            >
               <div className="w-9 h-9 rounded-xl bg-brand-muted flex items-center justify-center">
-                <BookPlus className="w-4.5 h-4.5 text-brand" style={{ width: 18, height: 18 }} />
+                <Icon className="w-4 h-4 text-brand" />
               </div>
-              <div>
-                <p className="font-semibold text-foreground text-[15px]">Library Catalog (Check Books Available)</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {catalog.length} book{catalog.length !== 1 ? 's' : ''} · {availableCount} available
-                </p>
-              </div>
+              <p className="text-xs font-semibold text-foreground">{label}</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-          </Link>
-        </section>
-
-        {borrows.length === 0 && catalog.length === 0 && (
-          <div className="text-center py-28">
-            <div className="w-16 h-16 bg-card rounded-3xl shadow-sm ring-1 ring-foreground/5 flex items-center justify-center mx-auto mb-5">
-              <BookOpen className="w-7 h-7 text-muted-foreground/50" />
-            </div>
-            <p className="font-semibold text-foreground/70">No records yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Borrow records will appear here.</p>
-          </div>
-        )}
+          ))}
+        </div>
       </main>
+
+      <footer className="py-6 text-center text-xs text-muted-foreground">
+        OTSI Library · Members only
+      </footer>
     </div>
   );
 }

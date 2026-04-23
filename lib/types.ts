@@ -15,6 +15,40 @@ export interface Borrow {
   borrowed_at: string;
   returned_at: string | null;
   notes: string | null;
+  // new columns
+  user_id: string | null;
+  status: 'pending' | 'active' | 'returned' | 'rejected';
+  taken_date: string | null;
+  due_date: string | null;
+  returned_date: string | null;
+  rejection_reason: string | null;
+  user_page_count: number | null;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  created_at: string;
+}
+
+export interface ReadingLog {
+  id: number;
+  user_id: string;
+  borrow_id: number;
+  log_date: string;
+  pages_read: number;
+  created_at: string;
+}
+
+export interface Notification {
+  id: number;
+  user_id: string;
+  type: 'request_approved' | 'request_rejected' | 'due_soon' | 'waitlist_ready';
+  message: string;
+  read: boolean;
+  created_at: string;
 }
 
 export interface Book {

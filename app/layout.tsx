@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/sonner';
 import { Providers } from '@/components/providers';
+import { syncUser } from '@/lib/sync-user';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -17,9 +18,10 @@ export const metadata: Metadata = {
   description: 'My Library',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  await syncUser();
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en" className={`${plusJakarta.variable} h-full`} suppressHydrationWarning>
