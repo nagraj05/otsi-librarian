@@ -1,4 +1,4 @@
-import { BookOpen, BookMarked, Library, Users, BookPlus } from 'lucide-react';
+import { BookOpen, BookMarked, Library, Users, BookPlus, ChevronRight } from 'lucide-react';
 import { SignInButton } from '@clerk/nextjs';
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
@@ -165,51 +165,6 @@ function ReturnedCard({ borrow }: { borrow: Borrow }) {
   );
 }
 
-function CatalogCard({
-  book,
-  hasBorrowHistory,
-}: {
-  book: Book & { borrowed_by: string | null };
-  hasBorrowHistory: boolean;
-}) {
-  const isOut = !!book.borrowed_by;
-  const content = (
-    <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-3.5 flex gap-3 items-start hover:shadow-md transition-all duration-200">
-      {book.thumbnail ? (
-        <Image
-          src={book.thumbnail}
-          alt={book.title}
-          width={44}
-          height={62}
-          className="rounded-xl object-cover shadow-sm shrink-0"
-          style={{ width: 44, height: 62, objectFit: 'cover' }}
-        />
-      ) : (
-        <div className="w-11 h-[62px] rounded-xl bg-muted flex items-center justify-center shrink-0">
-          <BookOpen className="w-5 h-5 text-muted-foreground/50" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0 pt-0.5">
-        <p className={`font-semibold text-sm leading-snug line-clamp-2 ${hasBorrowHistory ? 'text-foreground hover:text-brand transition-colors' : 'text-foreground'}`}>
-          {book.title}
-        </p>
-        {book.authors && book.authors.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{book.authors.join(', ')}</p>
-        )}
-        <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-          isOut ? 'bg-warn-muted text-warn-muted-fg' : 'bg-success-muted text-success-muted-fg'
-        }`}>
-          {isOut ? `Out · ${book.borrowed_by}` : 'Available'}
-        </span>
-      </div>
-    </div>
-  );
-
-  if (hasBorrowHistory) {
-    return <Link href={`/books/${book.book_id}`}>{content}</Link>;
-  }
-  return content;
-}
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -223,7 +178,6 @@ export default async function HomePage() {
   }, {});
   const people = Object.entries(byPerson);
 
-  const borrowedBookIds = new Set(borrows.map((b) => b.book_id));
   const availableCount = catalog.filter((b) => !b.borrowed_by).length;
 
   return (
@@ -317,27 +271,26 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* Library Catalog */}
-        {catalog.length > 0 && (
-          <section className="mb-10">
-            <div className="flex items-center gap-2.5 mb-5">
-              <BookPlus className="w-4 h-4 text-brand" />
-              <h3 className="font-bold text-foreground text-[15px]">Library Catalog</h3>
-              <span className="text-xs text-muted-foreground font-medium">
-                {catalog.length} book{catalog.length !== 1 ? 's' : ''} · {availableCount} available
-              </span>
+        {/* Library Catalog link */}
+        <section className="mb-10">
+          <Link
+            href="/books-catalog"
+            className="flex items-center justify-between bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-4 hover:shadow-md transition-all duration-200 group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-muted flex items-center justify-center">
+                <BookPlus className="w-4.5 h-4.5 text-brand" style={{ width: 18, height: 18 }} />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-[15px]">Library Catalog (Check Books Available)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {catalog.length} book{catalog.length !== 1 ? 's' : ''} · {availableCount} available
+                </p>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {catalog.map((book) => (
-                <CatalogCard
-                  key={book.id}
-                  book={book}
-                  hasBorrowHistory={borrowedBookIds.has(book.book_id)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          </Link>
+        </section>
 
         {borrows.length === 0 && catalog.length === 0 && (
           <div className="text-center py-28">
