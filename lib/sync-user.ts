@@ -37,11 +37,16 @@ export async function syncUser() {
   const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
   const role  = clerkUser.id === ADMIN_CLERK_ID ? 'admin' : 'user';
 
-  // check if user already has a username
-  const existing = await sql`SELECT username FROM users WHERE id = ${clerkUser.id}`;
-  const existingUsername = (existing[0] as { username: string | null } | undefined)?.username;
-
-  const username = existingUsername ?? await generateUsername(toSlug(name), clerkUser.id);
+  // If Clerk has a username, always sync it (handling collisions with other users).
+  // Otherwise fall back to the existing DB slug or generate a new one.
+  let username: string;
+  if (clerkUser.username) {
+    username = await generateUsername(clerkUser.username, clerkUser.id);
+  } else {
+    const existing = await sql`SELECT username FROM users WHERE id = ${clerkUser.id}`;
+    const existingUsername = (existing[0] as { username: string | null } | undefined)?.username;
+    username = existingUsername ?? await generateUsername(toSlug(name), clerkUser.id);
+  }
 
   await sql`
     INSERT INTO users (id, name, email, username, role)
@@ -49,7 +54,7 @@ export async function syncUser() {
     ON CONFLICT (id) DO UPDATE
       SET name     = EXCLUDED.name,
           email    = EXCLUDED.email,
-          username = COALESCE(users.username, EXCLUDED.username),
+          username = EXCLUDED.username,
           role     = ${role}
   `;
 

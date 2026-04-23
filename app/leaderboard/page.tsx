@@ -65,6 +65,7 @@ export default async function LeaderboardPage() {
       ...u,
       streak: calcStreak(u.log_dates ?? []),
     }))
+    .filter(u => u.streak > 0 || u.total_pages > 0)
     .sort((a, b) => {
       if (b.streak !== a.streak) return b.streak - a.streak;
       return b.total_pages - a.total_pages;
