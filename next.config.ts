@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'books.google.com' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/@:username',
+        destination: '/users/:username',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
