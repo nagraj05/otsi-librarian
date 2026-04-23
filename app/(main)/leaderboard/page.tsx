@@ -97,7 +97,7 @@ export default async function LeaderboardPage() {
           No readers yet — be the first to log a reading session!
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {users.map((u, i) => {
             const isMe = u.id === userId;
             const medal = MEDAL[i] ?? null;
@@ -107,30 +107,33 @@ export default async function LeaderboardPage() {
               <Link
                 key={u.id}
                 href={u.username ? `/@${u.username}` : `/users/${u.id}`}
-                className={`flex items-center gap-4 rounded-2xl ring-1 shadow-sm p-4 transition-all duration-200 hover:shadow-md ${
+                className={`flex items-center gap-2.5 sm:gap-4 rounded-2xl ring-1 shadow-sm px-3 py-3 sm:p-4 transition-all duration-200 hover:shadow-md ${
                   isMe
                     ? "bg-brand-muted ring-brand/20"
                     : "bg-card ring-foreground/5"
                 }`}
               >
-                <div className="w-7 text-center shrink-0">
+                {/* Rank */}
+                <div className="w-6 sm:w-7 text-center shrink-0">
                   {medal ? (
-                    <span className="text-lg leading-none">{medal}</span>
+                    <span className="text-base sm:text-lg leading-none">{medal}</span>
                   ) : (
-                    <span className="text-sm font-bold text-muted-foreground">
+                    <span className="text-xs sm:text-sm font-bold text-muted-foreground">
                       {i + 1}
                     </span>
                   )}
                 </div>
 
+                {/* Avatar */}
                 <div
-                  className={`w-10 h-10 rounded-2xl ${avatarColor(u.name)} flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl ${avatarColor(u.name)} flex items-center justify-center text-white text-xs sm:text-sm font-bold shrink-0 shadow-sm`}
                 >
                   {initials(u.name)}
                 </div>
 
+                {/* Name + stats */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <p
                       className={`font-semibold text-sm truncate uppercase ${isMe ? "text-brand" : "text-foreground"}`}
                     >
@@ -142,9 +145,9 @@ export default async function LeaderboardPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
+                  <div className="flex items-center flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" />
+                      <BookOpen className="w-3 h-3 shrink-0" />
                       {u.total_pages.toLocaleString()} pages
                     </span>
                     {u.active_books > 0 && (
@@ -155,7 +158,8 @@ export default async function LeaderboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Streak */}
+                <div className="flex flex-col items-center shrink-0">
                   <Flame
                     className={`w-4 h-4 ${
                       u.streak === 0
@@ -166,7 +170,7 @@ export default async function LeaderboardPage() {
                     }`}
                   />
                   <span
-                    className={`text-lg font-bold leading-none ${
+                    className={`text-base sm:text-lg font-bold leading-tight ${
                       u.streak === 0
                         ? "text-muted-foreground/40"
                         : isTop
