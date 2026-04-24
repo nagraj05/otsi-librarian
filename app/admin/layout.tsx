@@ -16,9 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!admin) redirect('/dashboard');
 
   return (
-    <>
+    <div className='min-h-screen'>
       <Navbar />
       {children}
-    </>
+    </div>
   );
 }

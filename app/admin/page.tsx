@@ -67,7 +67,7 @@ export default async function AdminPage() {
   const { pending, active, catalog } = await getData();
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-12">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">

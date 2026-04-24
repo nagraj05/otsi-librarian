@@ -133,13 +133,12 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
   const isMe = userId === profileId;
 
   return (
-    <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
 
       <div>
         <Link href="/leaderboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Leaderboard
         </Link>
-        <p className="text-xs text-muted-foreground mt-1">/@{user.username}</p>
       </div>
 
       {/* Profile header */}
@@ -159,8 +158,10 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
           </p>
         </div>
         <div className="flex flex-col items-center gap-0.5 shrink-0">
-          <Flame className={`w-6 h-6 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/30'}`} />
+          <div className='flex gap-1 items-center'>
+            <Flame className={`w-6 h-6 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/30'}`} />
           <span className={`text-2xl font-bold leading-none ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/30'}`}>{streak}</span>
+          </div>
           <span className="text-[10px] text-muted-foreground">day streak</span>
         </div>
       </div>

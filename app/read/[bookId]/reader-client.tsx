@@ -55,20 +55,22 @@ export function ReaderClient({
   const fontSizeRef = useRef(FONT_SIZES[2]);
 
   // UI
-  const [toolbarVisible, setToolbarVisible]   = useState(true);
   const [sidebarOpen, setSidebarOpen]         = useState(false);
   const [sidebarTab, setSidebarTab]           = useState<SidebarTab>('toc');
   const [pendingSelection, setPendingSelection] =
     useState<{ cfi: string; text: string } | null>(null);
+
+  // Page info for bottom bar
+  const [pageInfo, setPageInfo] = useState<{ page: number; total: number; pct: number | null } | null>(null);
 
   // Reading data
   const [bookmarks,  setBookmarks]  = useState<EbookBookmark[]>(initialBookmarks);
   const [highlights, setHighlights] = useState<EbookHighlight[]>(initialHighlights);
 
   // Refs
-  const renditionRef    = useRef<Rendition | null>(null);
-  const saveTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toolbarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const renditionRef       = useRef<Rendition | null>(null);
+  const saveTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locationsReadyRef  = useRef(false);
 
   // ─── Load prefs from localStorage ────────────────────────────────────────
   useEffect(() => {
@@ -92,11 +94,12 @@ export function ReaderClient({
   }
 
   // ─── Keyboard shortcuts ───────────────────────────────────────────────────
+  // Arrow keys are intentionally NOT handled here — EpubView registers its own
+  // keydown listener on the parent document for arrow navigation, so adding a
+  // second listener causes double page turns.  Only handle keys EpubView ignores.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowRight') renditionRef.current?.next();
-      if (e.key === 'ArrowLeft')  renditionRef.current?.prev();
-      if (e.key === 'Escape')     router.push(`/books/${bookId}`);
+      if (e.key === 'Escape') router.push(`/books/${bookId}`);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -113,31 +116,30 @@ export function ReaderClient({
     fontSizeRef.current = FONT_SIZES[fontSizeIdx];
   }, [fontSizeIdx]);
 
-  // ─── Toolbar auto-hide ────────────────────────────────────────────────────
-  function revealToolbar() {
-    setToolbarVisible(true);
-    if (toolbarTimerRef.current) clearTimeout(toolbarTimerRef.current);
-    toolbarTimerRef.current = setTimeout(() => {
-      if (!sidebarOpen) setToolbarVisible(false);
-    }, 3000);
-  }
-
   // ─── epub.js callbacks ────────────────────────────────────────────────────
   function handleGetRendition(rendition: Rendition) {
     renditionRef.current = rendition;
 
-    const bodyStyle = (extra?: object) => ({
+    const makeTheme = (bg: string, color: string) => ({
       body: {
+        background:    `${bg} !important`,
+        color:         `${color} !important`,
         'line-height': '1.85 !important',
         'font-family': 'Georgia, "Times New Roman", serif !important',
-        'padding': '0 4% !important',
-        ...extra,
+        'padding':     '0 4% !important',
       },
+      // Force every text element to inherit the body colour so epub
+      // stylesheets can't override it (the main culprit for blue links in dark mode).
+      'a, a:link, a:visited': { color: `${color} !important` },
+      'p, span, div, li, dt, dd, td, th, caption, blockquote, pre, code':
+        { color: 'inherit !important', background: 'transparent !important' },
+      'h1, h2, h3, h4, h5, h6, strong, b, em, i, small, sub, sup':
+        { color: 'inherit !important' },
     });
 
-    rendition.themes.register('light', bodyStyle({ background: '#ffffff !important', color: '#1a1a1a !important' }));
-    rendition.themes.register('sepia', bodyStyle({ background: '#fdf6e3 !important', color: '#3b2f1e !important' }));
-    rendition.themes.register('dark',  bodyStyle({ background: '#1f2937 !important', color: '#e5e7eb !important' }));
+    rendition.themes.register('light', makeTheme('#ffffff', '#1a1a1a'));
+    rendition.themes.register('sepia', makeTheme('#fdf6e3', '#3b2f1e'));
+    rendition.themes.register('dark',  makeTheme('#1f2937', '#e5e7eb'));
     rendition.themes.select(themeRef.current);
     rendition.themes.fontSize(`${fontSizeRef.current}px`);
 
@@ -148,6 +150,25 @@ export function ReaderClient({
         'fill-opacity': '0.45',
       });
     });
+
+    // Generate CFI locations in the background so we can show overall book %
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const book = (rendition as any).book;
+    if (book?.ready) {
+      book.ready.then(() => {
+        book.locations.generate(1600).then(() => {
+          locationsReadyRef.current = true;
+          // Refresh % with now-available locations
+          const loc = renditionRef.current?.location;
+          if (loc?.start) {
+            setPageInfo(prev => prev
+              ? { ...prev, pct: Math.round(loc.start.percentage * 100) }
+              : null,
+            );
+          }
+        });
+      });
+    }
   }
 
   function handleTocChanged(newToc: NavItem[]) {
@@ -171,11 +192,22 @@ export function ReaderClient({
     setCfi(newCfi);
     setPendingSelection(null);
 
-    // Update chapter label
-    const href = renditionRef.current?.location?.start?.href ?? '';
+    const loc = renditionRef.current?.location;
+
+    // Update chapter label from TOC
+    const href = loc?.start?.href ?? '';
     if (href) {
       const chapter = findChapter(tocRef.current, href);
       if (chapter) setCurrentChapter(chapter);
+    }
+
+    // Update page info for bottom bar
+    if (loc?.start?.displayed) {
+      setPageInfo({
+        page:  loc.start.displayed.page,
+        total: loc.start.displayed.total,
+        pct:   locationsReadyRef.current ? Math.round(loc.start.percentage * 100) : null,
+      });
     }
 
     // Debounced progress save (1.5 s)
@@ -279,15 +311,20 @@ export function ReaderClient({
   // ─── Render ───────────────────────────────────────────────────────────────
   const isBookmarked = !!activeBookmark();
 
+  const MUTED: Record<ReaderTheme, string> = {
+    light: '#9ca3af',
+    sepia: '#7c6a52',
+    dark:  '#6b7280',
+  };
+
   return (
     <div
       className="fixed inset-0 overflow-hidden"
       style={{ background: SHELL_BG[theme] }}
-      onMouseMove={revealToolbar}
       onClick={() => setPendingSelection(null)}
     >
-      {/* ── EPUB viewer ── */}
-      <div className="absolute inset-0">
+      {/* ── EPUB viewer — inset below toolbar (56 px) and above bottom bar (32 px) ── */}
+      <div className="absolute inset-x-0 top-14 bottom-8">
         <EpubView
           url={ebookUrl}
           location={cfi}
@@ -326,7 +363,6 @@ export function ReaderClient({
         fontSizeMax={fontSizeIdx === FONT_SIZES.length - 1}
         isBookmarked={isBookmarked}
         sidebarOpen={sidebarOpen}
-        visible={toolbarVisible || sidebarOpen}
         onThemeChange={handleThemeChange}
         onFontSizeIncrease={() => handleFontSize(+1)}
         onFontSizeDecrease={() => handleFontSize(-1)}
@@ -398,6 +434,38 @@ export function ReaderClient({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Bottom status bar ── */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-20 h-8 flex items-center px-4 gap-3"
+        style={{ background: SHELL_BG[theme] }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Thin progress fill */}
+        {pageInfo?.pct !== null && pageInfo?.pct !== undefined && (
+          <div className="absolute top-0 left-0 h-[2px] bg-brand/60 transition-all duration-500"
+            style={{ width: `${pageInfo.pct}%` }}
+          />
+        )}
+
+        {pageInfo ? (
+          <>
+            <span className="text-[11px] font-medium tabular-nums" style={{ color: MUTED[theme] }}>
+              Page {pageInfo.page} of {pageInfo.total}
+            </span>
+            {pageInfo.pct !== null && (
+              <>
+                <span style={{ color: MUTED[theme] }} className="text-[11px]">·</span>
+                <span className="text-[11px] font-semibold tabular-nums" style={{ color: MUTED[theme] }}>
+                  {pageInfo.pct}%
+                </span>
+              </>
+            )}
+          </>
+        ) : (
+          <span className="text-[11px]" style={{ color: MUTED[theme] }}>{title}</span>
+        )}
+      </div>
     </div>
   );
 }

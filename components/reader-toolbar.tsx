@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck, PanelRight, ALargeSmall } from 'lucide-react';
 import Link from 'next/link';
 import type { ReaderTheme } from '@/lib/types';
@@ -39,7 +38,6 @@ interface Props {
   fontSizeMax: boolean;
   isBookmarked: boolean;
   sidebarOpen: boolean;
-  visible: boolean;
   onThemeChange:       (t: ReaderTheme) => void;
   onFontSizeIncrease:  () => void;
   onFontSizeDecrease:  () => void;
@@ -52,18 +50,16 @@ interface Props {
 export function ReaderToolbar({
   bookId, title, chapter, theme,
   fontSizeMin, fontSizeMax,
-  isBookmarked, sidebarOpen, visible,
+  isBookmarked, sidebarOpen,
   onThemeChange, onFontSizeIncrease, onFontSizeDecrease,
   onBookmarkToggle, onSidebarToggle, onPrev, onNext,
 }: Props) {
-  const bg   = SHELL_BG[theme];
-  const text = TEXT_COLOR[theme];
+  const bg    = SHELL_BG[theme];
+  const text  = TEXT_COLOR[theme];
   const muted = MUTED_COLOR[theme];
 
   return (
-    <motion.div
-      animate={{ y: visible ? 0 : -72 }}
-      transition={{ duration: 0.22, ease: 'easeInOut' }}
+    <div
       style={{ background: bg, color: text }}
       className="fixed top-0 left-0 right-0 z-40 h-14 flex items-center px-3 gap-2 backdrop-blur-md border-b"
       onClick={e => e.stopPropagation()}
@@ -166,6 +162,6 @@ export function ReaderToolbar({
       >
         <PanelRight className="w-4 h-4" />
       </button>
-    </motion.div>
+    </div>
   );
 }

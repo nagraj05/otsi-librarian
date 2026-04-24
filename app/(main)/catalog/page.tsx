@@ -14,6 +14,7 @@ interface CatalogBook {
   thumbnail: string | null;
   publisher: string | null;
   page_count: number | null;
+  ebook_url: string | null;
   active_borrower: string | null;
   active_due_date: string | null;
   user_status: 'pending' | 'active' | null;
@@ -30,6 +31,7 @@ async function getCatalog(userId: string): Promise<CatalogBook[]> {
       b.thumbnail,
       b.publisher,
       b.page_count,
+      b.ebook_url,
       ab.borrower_name  AS active_borrower,
       ab.due_date       AS active_due_date,
       ub.status         AS user_status,
@@ -55,34 +57,34 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function StatusBadge({ userActive, userPending, isActive }: { userActive: boolean; userPending: boolean; isActive: boolean }) {
+  if (userActive) return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-muted text-brand">
+      <BookOpen className="w-3 h-3" /> Reading
+    </span>
+  );
+  if (userPending) return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-muted text-brand">
+      <Clock className="w-3 h-3" />
+      {isActive ? 'On waitlist' : 'Requested'}
+    </span>
+  );
+  if (!isActive) return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-success-muted text-success-muted-fg">
+      <CheckCircle2 className="w-3 h-3" /> Available
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-warn-muted text-warn-muted-fg">
+      <BookOpen className="w-3 h-3" /> Borrowed
+    </span>
+  );
+}
+
 function BookCard({ book }: { book: CatalogBook }) {
   const isActive    = !!book.active_borrower;
   const userActive  = book.user_status === 'active';
   const userPending = book.user_status === 'pending';
-
-  function StatusBadge() {
-    if (userActive) return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-muted text-brand">
-        <BookOpen className="w-3 h-3" /> Reading
-      </span>
-    );
-    if (userPending) return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-muted text-brand">
-        <Clock className="w-3 h-3" />
-        {isActive ? 'On waitlist' : 'Requested'}
-      </span>
-    );
-    if (!isActive) return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-success-muted text-success-muted-fg">
-        <CheckCircle2 className="w-3 h-3" /> Available
-      </span>
-    );
-    return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-warn-muted text-warn-muted-fg">
-        <BookOpen className="w-3 h-3" /> Borrowed
-      </span>
-    );
-  }
 
   return (
     <div className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
@@ -112,7 +114,18 @@ function BookCard({ book }: { book: CatalogBook }) {
 
       {/* Actions row — outside the link */}
       <div className="px-3.5 pb-3.5 flex items-center justify-between gap-2 flex-wrap">
-        <StatusBadge />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <StatusBadge userActive={userActive} userPending={userPending} isActive={isActive} />
+          {book.ebook_url && (
+            <Link
+              href={`/read/${book.book_id}`}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-500 hover:bg-violet-500/20 transition-colors"
+            >
+              <BookOpen className="w-3 h-3" />
+              Ebook
+            </Link>
+          )}
+        </div>
         {!userActive && !userPending && (
           <RequestButton
             bookId={book.book_id}

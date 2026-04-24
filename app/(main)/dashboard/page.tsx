@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { BookOpen, Clock, Flame, XCircle } from 'lucide-react';
 import sql from '@/lib/db';
 import { LogReadingForm } from '@/components/log-reading-form';
@@ -11,6 +12,7 @@ interface ActiveBorrow extends Borrow {
   today_pages: number | null;
   total_pages: number;
   user_page_count: number | null;
+  ebook_url: string | null;
 }
 
 async function getDashboardData(userId: string) {
@@ -19,15 +21,17 @@ async function getDashboardData(userId: string) {
 
     sql`
       SELECT b.*,
-        rl.pages_read::int          AS today_pages,
-        COALESCE(SUM(all_rl.pages_read), 0)::int AS total_pages
+        rl.pages_read::int                       AS today_pages,
+        COALESCE(SUM(all_rl.pages_read), 0)::int AS total_pages,
+        bk.ebook_url
       FROM borrows b
       LEFT JOIN reading_logs rl
         ON rl.borrow_id = b.id AND rl.user_id = ${userId} AND rl.log_date = CURRENT_DATE
       LEFT JOIN reading_logs all_rl
         ON all_rl.borrow_id = b.id AND all_rl.user_id = ${userId}
+      LEFT JOIN books bk ON bk.book_id = b.book_id
       WHERE b.user_id = ${userId} AND b.status = 'active'
-      GROUP BY b.id, rl.pages_read
+      GROUP BY b.id, rl.pages_read, bk.ebook_url
       ORDER BY b.due_date ASC NULLS LAST
     `,
 
@@ -155,6 +159,15 @@ export default async function DashboardPage() {
                             ? 'Due today'
                             : `Due ${formatDate(b.due_date)}`}
                         </span>
+                        {b.ebook_url && (
+                          <Link
+                            href={`/read/${b.book_id}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand text-white hover:bg-brand/85 transition-colors"
+                          >
+                            <BookOpen className="w-3 h-3" />
+                            Read Ebook
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
