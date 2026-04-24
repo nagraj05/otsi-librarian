@@ -6,6 +6,7 @@ import {
   Star, FileText, Tag, Clock, CheckCircle2, Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Navbar } from '@/components/navbar';
 import sql from '@/lib/db';
 import { Borrow } from '@/lib/types';
 
@@ -108,6 +109,7 @@ export default async function BookPage({
 
   return (
     <div className="min-h-screen">
+      <Navbar />
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden">
