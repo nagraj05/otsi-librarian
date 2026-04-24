@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Flame, BookOpen, Trophy } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import sql from "@/lib/db";
 import { calcStreak } from "@/lib/streak";
 
@@ -9,6 +10,7 @@ interface UserRow {
   id: string;
   name: string;
   username: string | null;
+  image_url: string | null;
   total_pages: number;
   active_books: number;
   log_dates: string[] | null;
@@ -20,6 +22,7 @@ async function getLeaderboard() {
       u.id,
       u.name,
       u.username,
+      u.image_url,
       COALESCE(SUM(rl.pages_read), 0)::int                                          AS total_pages,
       COUNT(DISTINCT CASE WHEN b.status = 'active' THEN b.id END)::int              AS active_books,
       ARRAY_AGG(DISTINCT rl.log_date::text)
@@ -125,11 +128,21 @@ export default async function LeaderboardPage() {
                 </div>
 
                 {/* Avatar */}
-                <div
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl ${avatarColor(u.name)} flex items-center justify-center text-white text-xs sm:text-sm font-bold shrink-0 shadow-sm`}
-                >
-                  {initials(u.name)}
-                </div>
+                {u.image_url ? (
+                  <Image
+                    src={u.image_url}
+                    alt={u.name}
+                    width={40}
+                    height={40}
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl object-cover shrink-0 shadow-sm"
+                  />
+                ) : (
+                  <div
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl ${avatarColor(u.name)} flex items-center justify-center text-white text-xs sm:text-sm font-bold shrink-0 shadow-sm`}
+                  >
+                    {initials(u.name)}
+                  </div>
+                )}
 
                 {/* Name + stats */}
                 <div className="flex-1 min-w-0">

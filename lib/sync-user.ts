@@ -34,8 +34,9 @@ export async function syncUser() {
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
     clerkUser.username ||
     'Unknown';
-  const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
-  const role  = clerkUser.id === ADMIN_CLERK_ID ? 'admin' : 'user';
+  const email    = clerkUser.emailAddresses[0]?.emailAddress ?? '';
+  const role     = clerkUser.id === ADMIN_CLERK_ID ? 'admin' : 'user';
+  const imageUrl = clerkUser.imageUrl ?? null;
 
   // If Clerk has a username, always sync it (handling collisions with other users).
   // Otherwise fall back to the existing DB slug or generate a new one.
@@ -49,13 +50,14 @@ export async function syncUser() {
   }
 
   await sql`
-    INSERT INTO users (id, name, email, username, role)
-    VALUES (${clerkUser.id}, ${name}, ${email}, ${username}, ${role})
+    INSERT INTO users (id, name, email, username, role, image_url)
+    VALUES (${clerkUser.id}, ${name}, ${email}, ${username}, ${role}, ${imageUrl})
     ON CONFLICT (id) DO UPDATE
-      SET name     = EXCLUDED.name,
-          email    = EXCLUDED.email,
-          username = EXCLUDED.username,
-          role     = ${role}
+      SET name      = EXCLUDED.name,
+          email     = EXCLUDED.email,
+          username  = EXCLUDED.username,
+          role      = ${role},
+          image_url = EXCLUDED.image_url
   `;
 
   return { id: clerkUser.id, name, email, username, role } as const;

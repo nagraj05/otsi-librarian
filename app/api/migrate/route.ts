@@ -54,6 +54,7 @@ export async function GET() {
 
   await sql`ALTER TABLE borrows ADD COLUMN IF NOT EXISTS user_page_count INTEGER`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS image_url TEXT`;
 
   return NextResponse.json({ ok: true, message: 'Migration complete' });
 }
