@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Spine -->
+  <rect x="3" y="2" width="6" height="28" rx="2" fill="#1e3a5f"/>
+  <!-- Cover -->
+  <rect x="6" y="2" width="22" height="28" rx="2" fill="#2563eb"/>
+  <!-- R letter -->
+  <text x="17" y="21" font-family="Georgia, serif" font-size="13" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">OL</text>
+</svg>
