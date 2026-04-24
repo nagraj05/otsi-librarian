@@ -74,7 +74,7 @@ export default async function LeaderboardPage() {
   const topStreak = users[0]?.streak ?? 0;
 
   return (
-    <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
           <Trophy
@@ -159,7 +159,7 @@ export default async function LeaderboardPage() {
                 </div>
 
                 {/* Streak */}
-                <div className="flex flex-col items-center shrink-0">
+                <div className="flex gap-2 items-center shrink-0">
                   <Flame
                     className={`w-4 h-4 ${
                       u.streak === 0
