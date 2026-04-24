@@ -56,5 +56,42 @@ export async function GET() {
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS image_url TEXT`;
 
+  // ── Ebook reader ──
+  await sql`ALTER TABLE books ADD COLUMN IF NOT EXISTS ebook_url TEXT`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS ebook_progress (
+      id         SERIAL PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id),
+      book_id    TEXT NOT NULL,
+      cfi        TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, book_id)
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS ebook_bookmarks (
+      id         SERIAL PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id),
+      book_id    TEXT NOT NULL,
+      cfi        TEXT NOT NULL,
+      label      TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS ebook_highlights (
+      id         SERIAL PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id),
+      book_id    TEXT NOT NULL,
+      cfi_range  TEXT NOT NULL,
+      text       TEXT NOT NULL,
+      color      TEXT NOT NULL DEFAULT 'yellow',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
   return NextResponse.json({ ok: true, message: 'Migration complete' });
 }

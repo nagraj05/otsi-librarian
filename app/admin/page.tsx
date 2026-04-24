@@ -4,6 +4,7 @@ import { AddToLibraryDialog } from '@/components/add-to-library-dialog';
 import { RemoveBookButton } from '@/components/remove-book-button';
 import { RequestRowActions } from '@/components/request-row-actions';
 import { MarkReturnedButton } from '@/components/mark-returned-button';
+import { EbookUpload } from '@/components/ebook-upload';
 import sql from '@/lib/db';
 import { Book, Borrow } from '@/lib/types';
 
@@ -229,6 +230,7 @@ export default async function AdminPage() {
                   }`}>
                     {b.borrowed_by ? `Out · ${b.borrowed_by}` : 'Available'}
                   </span>
+                  <EbookUpload bookId={b.book_id} title={b.title} hasEbook={!!b.ebook_url} />
                 </div>
               </div>
             ))}
