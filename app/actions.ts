@@ -240,11 +240,35 @@ export async function logReading(borrowId: number, pagesRead: number) {
 
   if (pagesRead < 1) throw new Error('Pages must be at least 1');
 
-  // verify borrow belongs to user and is active
+  // verify borrow belongs to user and is active; fetch page limit
   const borrowRow = await sql`
-    SELECT id FROM borrows WHERE id = ${borrowId} AND user_id = ${userId} AND status = 'active'
+    SELECT
+      b.user_page_count,
+      b.book_page_count,
+      COALESCE(SUM(rl.pages_read), 0)::int AS pages_logged_excl_today
+    FROM borrows b
+    LEFT JOIN reading_logs rl
+      ON rl.borrow_id = b.id AND rl.user_id = ${userId} AND rl.log_date != CURRENT_DATE
+    WHERE b.id = ${borrowId} AND b.user_id = ${userId} AND b.status = 'active'
+    GROUP BY b.user_page_count, b.book_page_count
   `;
   if (!borrowRow[0]) throw new Error('Active borrow not found');
+
+  const row = borrowRow[0] as {
+    user_page_count: number | null;
+    book_page_count: number | null;
+    pages_logged_excl_today: number;
+  };
+
+  const pageLimit = row.user_page_count ?? row.book_page_count;
+  if (pageLimit !== null && row.pages_logged_excl_today + pagesRead > pageLimit) {
+    const remaining = pageLimit - row.pages_logged_excl_today;
+    throw new Error(
+      remaining <= 0
+        ? 'You have already logged all pages for this book.'
+        : `Only ${remaining} page${remaining === 1 ? '' : 's'} remaining in this book.`
+    );
+  }
 
   await sql`
     INSERT INTO reading_logs (user_id, borrow_id, pages_read, log_date)
