@@ -17,32 +17,39 @@ interface Props {
 export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount }: Props) {
   const [editingLog,   setEditingLog]   = useState(!todayPages);
   const [editingTotal, setEditingTotal] = useState(false);
-  const [pages,        setPages]        = useState(todayPages ? String(todayPages) : '');
   const [customTotal,  setCustomTotal]  = useState(bookPageCount ? String(bookPageCount) : '');
   const [logLoading,   setLogLoading]   = useState(false);
   const [totalLoading, setTotalLoading] = useState(false);
 
-  const effectiveTotal = bookPageCount;
+  const effectiveTotal  = bookPageCount;
+  // Pages read in sessions before today — this is the page the user is "on"
+  const pagesExclToday  = totalPages - (todayPages ?? 0);
   const pct = effectiveTotal && effectiveTotal > 0
     ? Math.min(100, Math.round((totalPages / effectiveTotal) * 100))
     : null;
 
-  // pages already logged across all days except today
-  const pagesExclToday = totalPages - (todayPages ?? 0);
-  const remaining = effectiveTotal !== null ? Math.max(0, effectiveTotal - pagesExclToday) : null;
+  // Input stores the "current page reached" (not a delta)
+  const [currentPage, setCurrentPage] = useState(
+    todayPages ? String(totalPages) : ''
+  );
 
   async function handleLogSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const n = parseInt(pages);
-    if (!n || n < 1) { toast.error('Enter a valid page count'); return; }
-    if (remaining !== null && n > remaining) {
-      toast.error(remaining === 0 ? 'All pages already logged for this book.' : `Only ${remaining} page${remaining === 1 ? '' : 's'} remaining.`);
+    const target = parseInt(currentPage);
+    if (!target || target < 1) { toast.error('Enter a valid page number'); return; }
+    if (target <= pagesExclToday) {
+      toast.error(`Page must be greater than ${pagesExclToday} (where you left off)`);
       return;
     }
+    if (effectiveTotal && target > effectiveTotal) {
+      toast.error(`Page can't exceed the book's ${effectiveTotal} pages`);
+      return;
+    }
+    const delta = target - pagesExclToday;
     setLogLoading(true);
     try {
-      await logReading(borrowId, n);
-      toast.success(`${n} pages logged!`);
+      await logReading(borrowId, delta);
+      toast.success(`${delta} pages logged — you're on page ${target}!`);
       setEditingLog(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
@@ -126,9 +133,12 @@ export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount
       {!editingLog && todayPages ? (
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs font-semibold text-success">{todayPages} pages today</span>
+          <span className="text-xs font-semibold text-success">
+            Reached page {totalPages} today
+          </span>
+          <span className="text-[11px] text-muted-foreground">({todayPages} pages)</span>
           <button
-            onClick={() => setEditingLog(true)}
+            onClick={() => { setCurrentPage(String(totalPages)); setEditingLog(true); }}
             className="ml-auto text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             <Pencil className="w-3 h-3" /> Edit
@@ -137,15 +147,18 @@ export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount
       ) : (
         <form onSubmit={handleLogSubmit} className="flex items-center gap-2">
           <BookOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <Input
-            type="number"
-            min={1}
-            max={remaining ?? undefined}
-            placeholder={remaining !== null ? `Max ${remaining} pages` : 'Pages read today'}
-            value={pages}
-            onChange={e => setPages(e.target.value)}
-            className="h-7 text-xs rounded-lg flex-1"
-          />
+          <div className="flex-1 relative">
+            <Input
+              type="number"
+              min={pagesExclToday + 1}
+              max={effectiveTotal ?? undefined}
+              placeholder={`Page you reached${pagesExclToday > 0 ? ` (after ${pagesExclToday})` : ''}`}
+              value={currentPage}
+              onChange={e => setCurrentPage(e.target.value)}
+              className="h-7 text-xs rounded-lg w-full"
+              autoFocus={!todayPages}
+            />
+          </div>
           <Button type="submit" size="sm" disabled={logLoading}
             className="h-7 px-3 text-[12px] font-semibold rounded-lg bg-brand hover:bg-brand/90 text-white shrink-0">
             {logLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Log'}
