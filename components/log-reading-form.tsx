@@ -27,10 +27,18 @@ export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount
     ? Math.min(100, Math.round((totalPages / effectiveTotal) * 100))
     : null;
 
+  // pages already logged across all days except today
+  const pagesExclToday = totalPages - (todayPages ?? 0);
+  const remaining = effectiveTotal !== null ? Math.max(0, effectiveTotal - pagesExclToday) : null;
+
   async function handleLogSubmit(e: React.FormEvent) {
     e.preventDefault();
     const n = parseInt(pages);
     if (!n || n < 1) { toast.error('Enter a valid page count'); return; }
+    if (remaining !== null && n > remaining) {
+      toast.error(remaining === 0 ? 'All pages already logged for this book.' : `Only ${remaining} page${remaining === 1 ? '' : 's'} remaining.`);
+      return;
+    }
     setLogLoading(true);
     try {
       await logReading(borrowId, n);
@@ -132,7 +140,8 @@ export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount
           <Input
             type="number"
             min={1}
-            placeholder="Pages read today"
+            max={remaining ?? undefined}
+            placeholder={remaining !== null ? `Max ${remaining} pages` : 'Pages read today'}
             value={pages}
             onChange={e => setPages(e.target.value)}
             className="h-7 text-xs rounded-lg flex-1"
