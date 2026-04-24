@@ -3,7 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import sql from '@/lib/db';
-import { GoogleBook } from '@/lib/types';
+import { GoogleBook, PersonalBook, PersonalBookStatus } from '@/lib/types';
 
 export async function markAllRead() {
   const { userId } = await auth();
@@ -278,6 +278,107 @@ export async function logReading(borrowId: number, pagesRead: number) {
   `;
 
   revalidatePath('/dashboard');
+}
+
+// ── Personal Books ────────────────────────────────────────────────────────────
+
+export interface PersonalBookInput {
+  title: string;
+  authors: string[];
+  thumbnail: string | null;
+  publisher: string | null;
+  published_date: string | null;
+  page_count: number | null;
+  isbn: string | null;
+  google_book_id: string | null;
+  status: PersonalBookStatus;
+  current_page: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  rating: number | null;
+  notes: string | null;
+}
+
+export async function addPersonalBook(data: PersonalBookInput): Promise<PersonalBook> {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  if (!data.title.trim()) throw new Error('Title is required');
+  if (data.rating !== null && (data.rating < 0.5 || data.rating > 5)) {
+    throw new Error('Rating must be between 0.5 and 5');
+  }
+
+  const rows = await sql`
+    INSERT INTO personal_books (
+      user_id, title, authors, thumbnail, publisher, published_date,
+      page_count, isbn, google_book_id,
+      status, current_page, start_date, end_date, rating, notes
+    ) VALUES (
+      ${userId},
+      ${data.title.trim()},
+      ${data.authors},
+      ${data.thumbnail},
+      ${data.publisher},
+      ${data.published_date},
+      ${data.page_count},
+      ${data.isbn},
+      ${data.google_book_id},
+      ${data.status},
+      ${data.current_page},
+      ${data.start_date},
+      ${data.end_date},
+      ${data.rating},
+      ${data.notes}
+    )
+    RETURNING *
+  `;
+
+  revalidatePath('/personal-books');
+  return rows[0] as PersonalBook;
+}
+
+// All fields required — the update dialog always provides every value explicitly.
+export interface PersonalBookUpdate {
+  status: PersonalBookStatus;
+  current_page: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  rating: number | null;
+  notes: string | null;
+  page_count: number | null;
+}
+
+export async function updatePersonalBook(id: number, data: PersonalBookUpdate): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  if (data.rating !== null && (data.rating < 0.5 || data.rating > 5)) {
+    throw new Error('Rating must be between 0.5 and 5');
+  }
+
+  await sql`
+    UPDATE personal_books SET
+      status       = ${data.status},
+      current_page = ${data.current_page},
+      start_date   = ${data.start_date},
+      end_date     = ${data.end_date},
+      rating       = ${data.rating},
+      notes        = ${data.notes},
+      page_count   = ${data.page_count},
+      updated_at   = NOW()
+    WHERE id = ${id} AND user_id = ${userId}
+  `;
+
+  revalidatePath('/personal-books');
+}
+
+export async function deletePersonalBook(id: number): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  await sql`DELETE FROM personal_books WHERE id = ${id} AND user_id = ${userId}`;
+
+  revalidatePath('/personal-books');
 }
 
 export async function markReturned(borrowId: number) {
