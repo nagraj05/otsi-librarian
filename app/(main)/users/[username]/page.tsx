@@ -1,10 +1,12 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect, notFound } from 'next/navigation';
 import Image from 'next/image';
-import { Flame, BookOpen, CheckCircle2, Clock, BarChart2, ArrowLeft } from 'lucide-react';
+import { Flame, BookOpen, CheckCircle2, Clock, BarChart2, ArrowLeft, Library } from 'lucide-react';
 import Link from 'next/link';
 import sql from '@/lib/db';
 import { calcStreak } from '@/lib/streak';
+import { HalfStarRating } from '@/components/half-star-rating';
+import type { PersonalBookStatus } from '@/lib/types';
 
 interface ProfileUser {
   id: string;
@@ -26,6 +28,19 @@ interface ActiveBorrow {
   total_pages: number;
 }
 
+interface ProfilePersonalBook {
+  id: number;
+  title: string;
+  authors: string[];
+  thumbnail: string | null;
+  status: PersonalBookStatus;
+  current_page: number | null;
+  page_count: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  rating: number | null;
+}
+
 interface FinishedBorrow {
   id: number;
   book_id: string;
@@ -43,7 +58,7 @@ async function getProfileData(username: string) {
 
   const profileId = (userRow[0] as { id: string }).id;
 
-  const [activeRows, finishedRows, logDatesRow, statsRow] = await Promise.all([
+  const [activeRows, finishedRows, logDatesRow, statsRow, personalRows] = await Promise.all([
     sql`
       SELECT
         b.id, b.book_id, b.book_title, b.book_authors, b.book_thumbnail,
@@ -81,16 +96,27 @@ async function getProfileData(username: string) {
       LEFT JOIN borrows b       ON b.user_id  = u.id
       WHERE u.id = ${profileId}
     `,
+    // notes intentionally excluded — private
+    sql`
+      SELECT id, title, authors, thumbnail, status,
+             current_page, page_count, start_date, end_date, rating
+      FROM personal_books
+      WHERE user_id = ${profileId}
+      ORDER BY
+        CASE status WHEN 'reading' THEN 0 WHEN 'finished' THEN 1 ELSE 2 END,
+        updated_at DESC
+    `,
   ]);
 
   const logDates = logDatesRow.map(r => (r as { log_date: string }).log_date);
   const stats    = statsRow[0] as { total_pages: number; books_finished: number };
 
   return {
-    user:     userRow[0]   as ProfileUser & { username: string },
-    active:   activeRows   as ActiveBorrow[],
-    finished: finishedRows as FinishedBorrow[],
-    streak:   calcStreak(logDates),
+    user:          userRow[0]   as ProfileUser & { username: string },
+    active:        activeRows   as ActiveBorrow[],
+    finished:      finishedRows as FinishedBorrow[],
+    personalBooks: personalRows as ProfilePersonalBook[],
+    streak:        calcStreak(logDates),
     totalPages:    stats.total_pages,
     booksFinished: stats.books_finished,
     profileId,
@@ -129,7 +155,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
   const data = await getProfileData(username);
   if (!data) notFound();
 
-  const { user, active, finished, streak, totalPages, booksFinished, profileId } = data;
+  const { user, active, finished, personalBooks, streak, totalPages, booksFinished, profileId } = data;
   const isMe = userId === profileId;
 
   return (
@@ -285,6 +311,82 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
           <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
           <p className="font-semibold text-foreground/60 text-sm">No reading activity yet</p>
         </div>
+      )}
+
+      {/* Personal Readings */}
+      {personalBooks.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-4">
+            <Library className="w-4 h-4 text-brand" />
+            <h2 className="font-bold text-foreground text-[16px]">Personal Readings</h2>
+            <span className="text-xs text-muted-foreground font-medium">
+              {personalBooks.length} book{personalBooks.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {personalBooks.map(b => {
+              const pct = b.page_count && b.current_page
+                ? Math.min(100, Math.round((b.current_page / b.page_count) * 100))
+                : null;
+
+              const statusStyle = {
+                want_to_read: 'bg-muted text-muted-foreground',
+                reading:      'bg-brand-muted text-brand',
+                finished:     'bg-success-muted text-success-muted-fg',
+              }[b.status];
+
+              const statusLabel = {
+                want_to_read: 'Want to Read',
+                reading:      'Reading',
+                finished:     'Finished',
+              }[b.status];
+
+              return (
+                <div key={b.id} className="bg-card rounded-2xl ring-1 ring-foreground/5 shadow-sm p-3.5 flex gap-3 items-start">
+                  {b.thumbnail ? (
+                    <Image src={b.thumbnail} alt={b.title} width={44} height={62}
+                      className="rounded-xl object-cover shadow-sm shrink-0"
+                      style={{ width: 44, height: 62, objectFit: 'cover' }} />
+                  ) : (
+                    <div className="w-11 h-[62px] rounded-xl bg-muted flex items-center justify-center shrink-0">
+                      <BookOpen className="w-5 h-5 text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground line-clamp-2 leading-snug">{b.title}</p>
+                    {b.authors?.length > 0 && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{b.authors.join(', ')}</p>
+                    )}
+                    <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${statusStyle}`}>
+                      {statusLabel}
+                    </span>
+
+                    {/* Reading progress */}
+                    {b.status === 'reading' && b.page_count && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-muted-foreground">p. {b.current_page ?? 0} / {b.page_count}</span>
+                          {pct !== null && <span className="font-semibold text-brand">{pct}%</span>}
+                        </div>
+                        <div className="h-1 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full bg-brand" style={{ width: `${pct ?? 0}%` }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rating for finished */}
+                    {b.status === 'finished' && b.rating !== null && (
+                      <div className="mt-1.5">
+                        <HalfStarRating value={Number(b.rating)} size="sm" showValue />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
     </main>

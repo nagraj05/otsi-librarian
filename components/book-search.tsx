@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Search, Loader2, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { GoogleBook } from '@/lib/types';
@@ -11,31 +11,61 @@ interface BookSearchProps {
   selected: GoogleBook | null;
 }
 
+const DEBOUNCE_MS = 600;
+const MIN_CHARS   = 2;
+
 export function BookSearch({ onSelect, selected }: BookSearchProps) {
-  const [query, setQuery] = useState('');
+  const [query,   setQuery]   = useState('');
   const [results, setResults] = useState<GoogleBook[]>([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [open,    setOpen]    = useState(false);
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel pending timer + in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const search = useCallback((q: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.length < 2) {
+    // Clear any queued search
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    if (q.length < MIN_CHARS) {
       setResults([]);
       setOpen(false);
+      setLoading(false);
+      abortRef.current?.abort();
       return;
     }
-    debounceRef.current = setTimeout(async () => {
+
+    timerRef.current = setTimeout(async () => {
+      // Cancel the previous in-flight request before starting a new one
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+
       setLoading(true);
       try {
-        const res = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`);
+        const res  = await fetch(
+          `/api/books/search?q=${encodeURIComponent(q)}`,
+          { signal: abortRef.current.signal },
+        );
         const data = await res.json();
         setResults(data.books ?? []);
         setOpen(true);
+      } catch (err) {
+        // AbortError is expected when a newer request supersedes this one
+        if ((err as DOMException).name !== 'AbortError') {
+          setResults([]);
+        }
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, DEBOUNCE_MS);
   }, []);
 
   if (selected) {
@@ -83,10 +113,10 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         )}
         <Input
-          placeholder="Search books by title or author..."
+          placeholder="Search books by title or author…"
           className="pl-9"
           value={query}
-          onChange={(e) => {
+          onChange={e => {
             setQuery(e.target.value);
             search(e.target.value);
           }}
@@ -98,7 +128,7 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
 
       {open && results.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl max-h-72 overflow-y-auto">
-          {results.map((book) => (
+          {results.map(book => (
             <button
               key={book.id}
               type="button"
@@ -134,7 +164,7 @@ export function BookSearch({ onSelect, selected }: BookSearchProps) {
         </div>
       )}
 
-      {open && results.length === 0 && !loading && query.length >= 2 && (
+      {open && results.length === 0 && !loading && query.length >= MIN_CHARS && (
         <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-xl p-4 text-center text-sm text-muted-foreground">
           No books found for &ldquo;{query}&rdquo;
         </div>

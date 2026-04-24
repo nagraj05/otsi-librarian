@@ -8,9 +8,10 @@ import { UserButton } from '@clerk/nextjs';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const links = [
-  { href: '/dashboard',   label: 'Dashboard' },
-  { href: '/catalog',     label: 'Catalog' },
-  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/dashboard',      label: 'Dashboard'   },
+  { href: '/catalog',        label: 'Catalog'     },
+  { href: '/personal-books', label: 'My Books'    },
+  { href: '/leaderboard',    label: 'Leaderboard' },
 ];
 
 export function MobileMenu({ isAdmin }: { isAdmin?: boolean }) {

@@ -72,6 +72,29 @@ export interface Book {
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 export type SidebarTab   = 'toc' | 'bookmarks' | 'highlights';
 
+export type PersonalBookStatus = 'want_to_read' | 'reading' | 'finished';
+
+export interface PersonalBook {
+  id: number;
+  user_id: string;
+  title: string;
+  authors: string[];
+  thumbnail: string | null;
+  publisher: string | null;
+  published_date: string | null;
+  page_count: number | null;
+  isbn: string | null;
+  google_book_id: string | null;
+  status: PersonalBookStatus;
+  current_page: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  rating: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EbookProgress {
   id: number;
   user_id: string;

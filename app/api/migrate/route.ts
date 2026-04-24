@@ -56,6 +56,30 @@ export async function GET() {
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS image_url TEXT`;
 
+  // ── Personal books ──
+  await sql`
+    CREATE TABLE IF NOT EXISTS personal_books (
+      id             SERIAL PRIMARY KEY,
+      user_id        TEXT NOT NULL REFERENCES users(id),
+      title          TEXT NOT NULL,
+      authors        TEXT[]       NOT NULL DEFAULT '{}',
+      thumbnail      TEXT,
+      publisher      TEXT,
+      published_date TEXT,
+      page_count     INT,
+      isbn           TEXT,
+      google_book_id TEXT,
+      status         TEXT NOT NULL DEFAULT 'want_to_read',
+      current_page   INT,
+      start_date     DATE,
+      end_date       DATE,
+      rating         NUMERIC(2,1) CHECK (rating >= 0.5 AND rating <= 5),
+      notes          TEXT,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
   // ── Ebook reader ──
   await sql`ALTER TABLE books ADD COLUMN IF NOT EXISTS ebook_url TEXT`;
 
