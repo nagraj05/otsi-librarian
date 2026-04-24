@@ -65,7 +65,38 @@ export interface Book {
   isbn: string | null;
   rating: number | null;
   added_at: string;
+  ebook_url: string | null;
   borrowed_by?: string | null;
+}
+
+export type ReaderTheme = 'light' | 'sepia' | 'dark';
+export type SidebarTab   = 'toc' | 'bookmarks' | 'highlights';
+
+export interface EbookProgress {
+  id: number;
+  user_id: string;
+  book_id: string;
+  cfi: string;
+  updated_at: string;
+}
+
+export interface EbookBookmark {
+  id: number;
+  user_id: string;
+  book_id: string;
+  cfi: string;
+  label: string | null;
+  created_at: string;
+}
+
+export interface EbookHighlight {
+  id: number;
+  user_id: string;
+  book_id: string;
+  cfi_range: string;
+  text: string;
+  color: 'yellow' | 'green' | 'blue' | 'pink';
+  created_at: string;
 }
 
 export interface GoogleBook {

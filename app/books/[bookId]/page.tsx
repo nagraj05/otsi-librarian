@@ -76,7 +76,7 @@ async function getBook(bookId: string) {
     book_id: string; title: string; authors: string[]; thumbnail: string | null;
     description: string | null; publisher: string | null; published_date: string | null;
     page_count: number | null; categories: string[] | null; isbn: string | null;
-    rating: number | null;
+    rating: number | null; ebook_url: string | null;
   } | undefined;
 }
 
@@ -100,6 +100,7 @@ export default async function BookPage({
     book_isbn: book.isbn,
     book_rating: book.rating,
     book_description: book.description,
+    ebook_url: book.ebook_url,
   };
   const currentBorrow = borrows.find((r) => !r.returned_at);
   const totalBorrows = borrows.length;
@@ -202,6 +203,16 @@ export default async function BookPage({
                     <><CheckCircle2 className="w-3 h-3" />Available</>
                   )}
                 </span>
+
+                {b.ebook_url && (
+                  <Link
+                    href={`/read/${bookId}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-brand text-white hover:bg-brand/85 transition-colors shadow-sm"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    Read Ebook
+                  </Link>
+                )}
               </div>
             </div>
           </div>
