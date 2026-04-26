@@ -35,6 +35,14 @@ export function LogReadingForm({ borrowId, todayPages, totalPages, bookPageCount
 
   async function handleLogSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!effectiveTotal) {
+      toast.error('Add total pages first', {
+        description: 'Set the book\'s total page count before logging your reading.',
+      });
+      setCustomTotal('');
+      setEditingTotal(true);
+      return;
+    }
     const target = parseInt(currentPage);
     if (!target || target < 1) { toast.error('Enter a valid page number'); return; }
     if (target <= pagesExclToday) {
