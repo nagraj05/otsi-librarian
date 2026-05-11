@@ -149,7 +149,7 @@ export function AdminTabs({ pending, active, catalog }: AdminTabsProps) {
                     <Thumbnail src={b.book_thumbnail} alt={b.book_title} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-foreground line-clamp-1">{b.book_title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{b.user_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 uppercase">{b.user_name}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-[11px] text-muted-foreground">
                           Taken {formatDate(b.taken_date)}
